@@ -1,0 +1,5 @@
+* text=auto eol=lf
+/Cargo.lock text eol=lf
+/tools/go-reference/go.mod text eol=lf
+/tools/go-reference/go.sum text eol=lf
+/LICENSE -text whitespace=cr-at-eol

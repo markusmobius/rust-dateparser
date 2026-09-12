@@ -1,0 +1,10 @@
+github.com/hablullah/go-hijri v1.0.2 h1:drT/MZpSZJQXo7jftf5fthArShcaMtsal0Zf/dnmp6k=
+github.com/hablullah/go-hijri v1.0.2/go.mod h1:OS5qyYLDjORXzK4O1adFw9Q5WfhOcMdAKglDkcTxgWQ=
+github.com/hablullah/go-juliandays v1.0.0 h1:A8YM7wIj16SzlKT0SRJc9CD29iiaUzpBLzh5hr0/5p0=
+github.com/hablullah/go-juliandays v1.0.0/go.mod h1:0JOYq4oFOuDja+oospuc61YoX+uNEn7Z6uHYTbBzdGc=
+github.com/jalaali/go-jalaali v0.1.0 h1:T1duwWUENzyKRH/uixarTCFsmK6maZlN4VaVlfASM5Q=
+github.com/jalaali/go-jalaali v0.1.0/go.mod h1:Wqfu7mjUHj9WDzSSPI5KfBclTTEnLveRUFr/ujWnTgE=
+github.com/markusmobius/go-dateparser v1.4.3 h1:FWb52fQDRTdHcRfU8R2hkTW+U4HA4m39ldonanH5x0E=
+github.com/markusmobius/go-dateparser v1.4.3/go.mod h1:Mn9FshDlbUnkdM/ibe4Pjlg6EwgrAvqfKdt4PMAcTOo=
+golang.org/x/text v0.42.0 h1:JbOZXgfeCPU9gacVtYliJqOhD+zhrEqK4LfdpmlUZqI=
+golang.org/x/text v0.42.0/go.mod h1:ojzP1Z+2QtioaF8DTtO8K5q7JWVVYwZKenzujK0Zd0E=
