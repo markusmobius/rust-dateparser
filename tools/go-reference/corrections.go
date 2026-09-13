@@ -20,6 +20,8 @@ import (
 	"github.com/markusmobius/go-dateparser/internal/timezone"
 )
 
+var correctionsDateutilVersion = "v2.9.0"
+
 func exportCorrections(source, output string) {
 	source, err := filepath.Abs(source)
 	if err != nil {
@@ -29,13 +31,22 @@ func exportCorrections(source, output string) {
 	if !ok || info.GoVersion != "go1.27.1" {
 		panic("unverified Go toolchain")
 	}
+	var dateutilSum string
+	switch correctionsDateutilVersion {
+	case "v2.9.0":
+		dateutilSum = "h1:5XFuxvOZNPUAlx50mQZTSJPPAmk030dm6qz9WkO5Fms="
+	case "v2.9.1":
+		dateutilSum = "h1:5g4V8s1vg/EAmhu/g14VQcHgocNf8H8VD4IzOfZg+1Y="
+	default:
+		panic("unverified Dateutil version")
+	}
 	verifiedSource, verifiedDateutil := false, false
 	for _, dependency := range info.Deps {
 		switch dependency.Path {
 		case "github.com/markusmobius/go-dateparser":
 			verifiedSource = dependency.Replace != nil && filepath.Clean(dependency.Replace.Path) == source
 		case "github.com/markusmobius/go-dateutil/v2":
-			verifiedDateutil = dependency.Replace == nil && dependency.Version == "v2.9.0" && dependency.Sum == "h1:5XFuxvOZNPUAlx50mQZTSJPPAmk030dm6qz9WkO5Fms="
+			verifiedDateutil = dependency.Replace == nil && dependency.Version == correctionsDateutilVersion && dependency.Sum == dateutilSum
 		}
 	}
 	if !verifiedSource || !verifiedDateutil {

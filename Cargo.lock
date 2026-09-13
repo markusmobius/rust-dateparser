@@ -319,7 +319,7 @@ checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
 name = "rust-dateparser"
-version = "1.4.6"
+version = "1.4.7"
 dependencies = [
  "aho-corasick",
  "chrono",
@@ -334,8 +334,8 @@ dependencies = [
 
 [[package]]
 name = "rust-dateutil"
-version = "2.9.0"
-source = "git+https://github.com/markusmobius/rust-dateutil?rev=205702d70c3b9190cb2b3474cf1593f913549a61#205702d70c3b9190cb2b3474cf1593f913549a61"
+version = "2.9.1"
+source = "git+https://github.com/markusmobius/rust-dateutil?rev=3a7537dd3a4e223756fa31fb1941a10da4c78b30#3a7537dd3a4e223756fa31fb1941a10da4c78b30"
 dependencies = [
  "chrono",
  "num-bigint",

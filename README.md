@@ -11,30 +11,36 @@ embedded locale data, with no Go, Python, native RE2 library, or network service
 required at runtime.
 
 The public API includes localized parsing, split and n-gram search, time spans,
-Jalali parsing and Hijri/Umm al-Qura parsing. RustDateParser **v1.4.6** tracks
-[Go-DateParser v1.4.6](https://github.com/markusmobius/go-dateparser/releases/tag/v1.4.6)
+Jalali parsing and Hijri/Umm al-Qura parsing. RustDateParser **v1.4.7** tracks
+[Go-DateParser v1.4.7](https://github.com/markusmobius/go-dateparser/releases/tag/v1.4.7)
 and **Python dateparser v1.4.3**. Calendar and search behavior is independently
 checked against Python. Compatibility limits and verification coverage are
 documented below.
 
 The Dateutil integration uses published
-[Rust-Dateutil v2.9.0](https://github.com/markusmobius/rust-dateutil/releases/tag/v2.9.0),
-pinned to commit `205702d70c3b9190cb2b3474cf1593f913549a61` in Cargo. Relative
+[Rust-Dateutil v2.9.1](https://github.com/markusmobius/rust-dateutil/releases/tag/v2.9.1),
+pinned to commit `3a7537dd3a4e223756fa31fb1941a10da4c78b30` in Cargo. Relative
 arithmetic follows Python's `relativedelta`: month ends clamp, fractional seconds
 retain microsecond precision, and fractional years/months are rejected. Explicit
 invalid Gregorian dates are rejected; omitted days may clamp. These corrections
-were verified against Python first in Go, then in Rust. The published v1.4.5
-release and its historical performance measurements are unchanged.
+were verified against Python first in Go, then in Rust. Version 1.4.7 is a
+dependency refresh with no DateParser runtime algorithm changes. The published
+v1.4.5/v1.4.6 releases and historical performance measurements are unchanged;
+the tables below report their actual v1.4.6 observations, not v1.4.7 timings.
 
 ## Usage
 
-Use the tagged v1.4.6 release:
+Use the tagged v1.4.7 GitHub source release:
 
 ```toml
 [dependencies]
 chrono = "0.4.42"
-rust-dateparser = { git = "https://github.com/markusmobius/rust-dateparser", tag = "v1.4.6", version = "=1.4.6" }
+rust-dateparser = { git = "https://github.com/markusmobius/rust-dateparser", tag = "v1.4.7", version = "=1.4.7" }
 ```
+
+This release is not published to crates.io. Cargo Git builds use the pinned
+Rust-Dateutil revision; registry packaging with `cargo package` requires that
+dependency to be published to the registry and is not supported here.
 
 ```rust
 use chrono::TimeZone;
@@ -359,6 +365,21 @@ pre-release source identity rather than relabelling it as the release tag.
 Normal Rust tests use the packaged fixture and need neither that checkout nor
 Python.
 
+For v1.4.7, the separate behavior recheck uses published Go-Dateutil v2.9.1
+with its exact checksum while leaving the historical fixture untouched:
+
+```sh
+python tools/python-reference/verify_dateutil.py --go-source /path/to/go-dateparser --check-current
+```
+
+This passed for Go commit `1554533a164fdcab763e59bd42fe46c86bb98a74`, with
+LF-normalized source SHA-256
+`6b86584607694e402b2d1a308c252636fe00c324edfedde00cd2c9a164e5dcfd`.
+All original inputs retain their corrected results; Python independently
+reconfirmed the same 75 core and 16 search-result corrections. The command
+compares results, input hashes and Python evidence, reports current source
+provenance, and never rewrites the fixture's original commit identity.
+
 To generate a fresh, development-only Go reference from this repository root:
 
 ```sh
@@ -400,13 +421,14 @@ $env:PATH = 'C:/msys64/ucrt64/bin;' + $env:PATH
 
 | Reference | Pin |
 | --- | --- |
-| Go-DateParser | [v1.4.6](https://github.com/markusmobius/go-dateparser/releases/tag/v1.4.6) |
+| Go-DateParser | [v1.4.7](https://github.com/markusmobius/go-dateparser/releases/tag/v1.4.7) |
+| Current Go behavior recheck | v1.4.7 source `1554533a164fdcab763e59bd42fe46c86bb98a74`; published Go-Dateutil v2.9.1 |
 | Go correction/benchmark source | Pre-release commit `7837629bf3773c8d94524ec603706bec9a0c665b`, with the same runtime as v1.4.6 |
 | Historical Go fixture | v1.4.5, source commit `e02a0cfd80decdd47412d773b4799a89af078409` |
 | Historical annotated Go tag | `78257ee87860f23232eced745827eff829cd1a12` (not the source commit) |
 | Historical Go module checksum | `h1:Y34+feJSV/d7QGMbLFlQSfdPDVdhQS5qVL8/sHJ9eKk=` |
-| Go-Dateutil | v2.9.0, source commit `3b89c9d93f415475684a5d477a0664750c3c4dc7` |
-| Rust-Dateutil | v2.9.0, source commit `205702d70c3b9190cb2b3474cf1593f913549a61` |
+| Go-Dateutil | v2.9.1, source commit `1a29d3cc92f3491373cbfddb3059a00b0fa0a1d6` |
+| Rust-Dateutil | v2.9.1, source commit `3a7537dd3a4e223756fa31fb1941a10da4c78b30` |
 | Go oracle | Go 1.27.1, `golang.org/x/text v0.42.0` |
 | Python source behind the Go port | dateparser 1.4.3, `9ce60b1958f1b285886bcfbb743f6419feacfc92` |
 

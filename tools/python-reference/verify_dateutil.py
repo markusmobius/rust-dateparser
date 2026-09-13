@@ -84,7 +84,9 @@ def main():
     parser.add_argument("--go-source", type=Path, required=True)
     parser.add_argument("--go", default="go")
     parser.add_argument("--git", default="git")
-    parser.add_argument("--check", action="store_true")
+    checks = parser.add_mutually_exclusive_group()
+    checks.add_argument("--check", action="store_true")
+    checks.add_argument("--check-current", action="store_true", help="recheck behavior with published Dateutil v2.9.1 without rewriting historical provenance")
     arguments = parser.parse_args()
     if platform.python_version() != "3.14.6":
         raise RuntimeError("expected CPython3.14.6")
@@ -103,6 +105,8 @@ def main():
         subprocess.run([arguments.go, "mod", "edit", f"-modfile={module}", f"-replace=github.com/markusmobius/go-dateparser={source.as_posix()}"], cwd=reference, env=environment, check=True)
         subprocess.run([arguments.go, "mod", "tidy", f"-modfile={module}"], cwd=reference, env=environment, check=True)
         flags = f"-X=main.benchmarkSourceCommit={provenance['commit']} -X=main.benchmarkSourceSHA256={provenance['source_sha256']}"
+        if arguments.check_current:
+            flags += " -X=main.correctionsDateutilVersion=v2.9.1"
         subprocess.run([arguments.go, "run", f"-modfile={module}", "-mod=readonly", f"-ldflags={flags}", ".", "-corrections-source", str(source), "-output", str(output)], cwd=reference, env=environment, check=True)
         corrections = json.loads(output.read_text(encoding="utf-8"))
     if provenance != source_reference(source, arguments.git):
@@ -128,7 +132,14 @@ def main():
     corrections["source_line_endings"] = "LF"
     encoded = (json.dumps(corrections, ensure_ascii=True, indent=2) + "\n").encode()
     destination = ROOT / "testdata/dateutil-corrections.json"
-    if arguments.check:
+    if arguments.check_current:
+        historical = json.loads(destination.read_text(encoding="utf-8"))
+        for field in ("core_sha256", "features_sha256", "core", "features", "python"):
+            if corrections[field] != historical[field]:
+                raise RuntimeError(f"Current Dateutil behavior changed: {field}")
+        print(f"Current Go source {provenance['commit']}, SHA-256 {provenance['source_sha256']}; published Dateutil v2.9.1 verified")
+        print(f"Historical correction provenance remains {historical['reference']['commit']}")
+    elif arguments.check:
         if destination.read_bytes() != encoded:
             raise RuntimeError("Dateutil corrections changed")
     else:
