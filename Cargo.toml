@@ -1,6 +1,6 @@
 [package]
 name = "rust-dateparser"
-version = "0.1.0"
+version = "1.4.5"
 edition = "2021"
 rust-version = "1.98.1"
 description = "Faithful Rust port of the go-dateparser parsing runtime"

@@ -11,9 +11,11 @@ embedded locale data, with no Go, Python, native RE2 library, or network service
 required at runtime.
 
 The public API includes localized parsing, split and n-gram search, time spans,
-Jalali parsing and Hijri/Umm al-Qura parsing. The immediate Go reference is
-**v1.4.5**, with independent Python dateparser 1.4.3 checks for calendars and
-search. Compatibility limits and verification coverage are documented below.
+Jalali parsing and Hijri/Umm al-Qura parsing. RustDateParser **v1.4.5** mirrors
+**Go-DateParser v1.4.5** and **Python dateparser v1.4.3**. Its release version
+follows the Go reference, not the Python version. Calendar and search behavior
+is independently checked against Python; compatibility limits and verification
+coverage are documented below.
 
 ## Usage
 
