@@ -1,13 +1,19 @@
 # RustDateParser
 
-RustDateParser parses localized date and time strings, including absolute dates,
-relative expressions and Unix timestamps. It uses native Rust code and embedded
-locale data, with no Go, Python, native RE2 library, or network service required
-at runtime.
+RustDateParser is a Rust implementation of the Python library
+[scrapinghub/dateparser](https://github.com/scrapinghub/dateparser), built by
+faithfully replicating its Go port,
+[markusmobius/go-dateparser](https://github.com/markusmobius/go-dateparser)
+**v1.4.4**.
 
-This development port follows **go-dateparser v1.4.4**. Localized `Parse` behavior
-is implemented; the separate search and non-Gregorian calendar APIs are not yet
-ported. It is not a complete replacement for every Go-DateParser public API.
+It parses localized date and time strings, including absolute dates, relative
+expressions and Unix timestamps. The implementation uses native Rust code and
+embedded locale data, with no Go, Python, native RE2 library, or network service
+required at runtime.
+
+Localized `Parse` behavior is implemented; the separate search and non-Gregorian
+calendar APIs are not yet ported. This is not yet a complete replacement for
+either upstream library.
 
 ## Usage
 
@@ -116,75 +122,41 @@ corpus are not an exhaustive compatibility proof.
 
 ## Speed Comparison
 
-Measured on 2026-09-12 with Rust 1.98.1 and Go 1.27.1 running published
-go-dateparser v1.4.3 and v1.4.4, on an AMD Ryzen AI 7 PRO 350 under Linux
-x86_64/WSL2. All three optimized binaries were pinned to CPU 2 with one parsing
-caller; Go used `GOMAXPROCS=1`, default
-garbage collection and its default pure-Go backend. Rust used the portable
-release profile, without native-CPU flags or internal parallelism.
+RustDateParser versus **Go-DateParser v1.4.4**, measured on 2026-09-12 with Rust
+1.98.1 and Go 1.27.1 on an AMD Ryzen AI 7 PRO 350, Linux x86_64/WSL2. Both use
+portable optimized builds, CPU 2 and one parsing caller, without internal
+parallelism. Go uses `GOMAXPROCS=1`, default garbage collection and its pure-Go
+backend.
 
-Known-word lookup uses a cached **Aho-Corasick multi-pattern matcher per locale**.
-Each matcher is built once on first use and shared through `OnceLock`; it is not
-build-time generated source or a re2go conversion. Matching preserves Go's
-dictionary-order ties, first-occurrence behavior and Unicode boundary rules.
-The runtime also caches default locale orderings, shares locale-independent
-normalization and digit conversion, and checks applicability lazily in locale
-priority order until parsing succeeds. Configuration validation stays eager,
-and candidate coverage, callbacks and parsing results are unchanged.
+Both repositories use the same [fixture](testdata/go-core.json), runner and
+Go v1.4.4 samples. The 2,951 stateless public cases retain their original
+settings, formats and frozen reference times; 16 detector/history cases are
+excluded. Each implementation validates exact dates, errors, periods, locales,
+offsets and nanoseconds before timing. Parsed counts are not accuracy scores.
 
-Go v1.4.4 also includes lazy applicability, shared input preparation and cached
-default locale orderings. It retains its existing dictionary scan: the tested
-Go multi-pattern matchers did not justify their speed/memory tradeoffs. The
-comparison below uses this improved, published Go baseline.
+| Cohort | Inputs (Parsed) | Rust Warm Pass | Go v1.4.4 Warm Pass | Go/Rust Time |
+| --- | --- | --- | --- | --- |
+| Automatic locale detection | 226 (222) | 26.14 ms | 186.44 ms | 7.13x |
+| Explicit locales/languages | 2,530 (2,388) | 66.66 ms | 915.56 ms | 13.74x |
+| HtmlDate strict/past configuration | 195 (167) | 48.73 ms | 263.22 ms | 5.40x |
 
-Both repositories use **one fixture, one runner and the same measured samples**
-for their current performance tables. The benchmark reuses
-[testdata/go-core.json](testdata/go-core.json). Its 2,951
-stateless public parsing cases include expected failures; the 16 detector/history
-cases are excluded. All three implementations validate every selected result against
-the Go fixture before timing. Dates, errors, periods, locales, offsets and
-nanoseconds match; successful-parse counts below are not accuracy scores. Each
-case retains its original settings, formats and frozen reference time. The
-cohorts have different inputs, but every engine gets the same cases within a row.
+Times are complete warmed passes, summarized as the median of six per-process
+pass medians. Each process performs eight measured passes after a validated
+first pass; execution order is balanced and separate preflights are discarded.
+Setup, fixture decoding, initial matcher/regex construction and output checks
+are outside the warm timers. Compare engines within a row, not different cohorts.
+These regression-corpus results are not a production throughput guarantee.
 
-Each cohort has six fresh launches per engine, cycling through all six engine
-orders so each engine runs first, second and third twice. Separate preflight
-launches are discarded. Each measured process validates
-one full first pass, then times eight warmed passes in the same input order.
-Settings and independent per-case parsers are prepared outside the timers and
-reused. Warm timings include public parsing, result consumption and cleanup,
-but exclude fixture loading, initial regex/matcher construction and output
-validation.
+Go reaches the first validated full pass sooner for automatic detection and
+HtmlDate; warmed gains do not imply startup gains. The
+[raw report](https://github.com/markusmobius/go-dateparser/releases/download/v1.4.4/shared-dateparser-2026-09-12.json)
+retains all 36 Rust/Go v1.4.4 processes and 288 warm passes, ranges, first-pass
+latency, execution orders, binary hashes and module provenance.
 
-| Cohort | Inputs (Parsed) | Go v1.4.3 | Go v1.4.4 | Rust | Go Old/New | Go v1.4.4/Rust |
-| --- | --- | --- | --- | --- | --- | --- |
-| Automatic locale detection | 226 (222) | 717.43 ms | 186.44 ms | 26.14 ms | 3.85x | 7.13x |
-| Explicit locales/languages | 2,530 (2,388) | 846.20 ms | 915.56 ms | 66.66 ms | 0.92x | 13.74x |
-| HtmlDate strict/past configuration | 195 (167) | 732.02 ms | 263.22 ms | 48.73 ms | 2.78x | 5.40x |
-
-Values are medians of the six per-process pass medians. Their min/max ranges
-were Go v1.4.3/Go v1.4.4/Rust **693.30-806.51 / 159.18-219.91 / 24.38-33.94 ms**
-for automatic detection, **723.10-1,147.53 / 723.33-1,133.65 / 65.25-98.13 ms**
-for explicit locales, and **699.72-853.03 / 255.47-316.95 / 44.60-77.83 ms**
-for HtmlDate. Go's explicit-locale median is higher in v1.4.4 in this run, but
-the ranges overlap widely; these samples establish neither a reliable gain nor
-a regression there. Rust's warmed ranges separate from both Go versions in all
-three cohorts. This is a regression corpus, not a production sample or a general
-claim that one language is faster.
-
-Fresh-process latency is reported separately:
-
-| Cohort | Go v1.4.3 First Pass | Go v1.4.4 First Pass | Rust First Pass |
-| --- | --- | --- | --- |
-| Automatic locale detection | 1,144.24 ms | 557.09 ms | 1,076.83 ms |
-| Explicit locales/languages | 1,312.68 ms | 1,343.08 ms | 1,501.85 ms |
-| HtmlDate strict/past configuration | 1,123.16 ms | 667.42 ms | 1,410.90 ms |
-
-These medians include process/test-harness startup, fixture decoding, library
-initialization, lazy regex/matcher construction and the entire first validated
-pass. They are not isolated library startup or cold-disk measurements. Go v1.4.4 reaches
-this endpoint sooner for automatic detection and HtmlDate; the explicit-locale
-ranges overlap. Rust's warmed advantage does not imply a first-use advantage.
+The Rust runtime caches per-locale Aho-Corasick word matchers and default locale
+orders, shares input preparation and checks locale applicability lazily.
+Matchers are built once on first use, not generated at build time. Exact
+dictionary priority, first-occurrence behavior and Unicode boundaries are retained.
 
 Reproduce from the repository root under Linux/WSL with Python 3.9+, Rust and Go:
 
@@ -196,50 +168,9 @@ python3 tools/benchmark.py --runs 6 --passes 8 --cpu 2
 execution and saves all samples, toolchain versions, fixture/binary hashes and
 summary statistics under the ignored `target/benchmark/` directory. Use
 `--cohort auto`, `--cohort explicit` or `--cohort htmldate` for one cohort and
-`--output` to choose a report path. For Go-only comparison, add
-`--engine go-v1.4.3 --engine go-v1.4.4`; that mode needs no Rust toolchain.
-Three-engine runs must be a multiple of six; two-engine runs must be even.
-Temporary module files select the checksum-verified Go tags without changing
-the oracle's dependency locks or the module cache. Historical Go versions are
-benchmark-only; fixture generation stays pinned to v1.4.4.
-
-The table used separate reports for each cohort with identical binaries and fixture SHA-256
-`c07b2bb77d75a959b86364a5c2f1fbd6a24b9c6b3619b70099141ab75cb2f24f`.
-The local reports are `shared-auto.json`, `shared-explicit.json` and
-`shared-htmldate.json`. Their combined
-[raw report](https://github.com/markusmobius/go-dateparser/releases/download/v1.4.4/shared-dateparser-2026-09-12.json)
-retains all **54 processes and 432 warm passes**, engine orders, binary hashes
-and Go module provenance. Its SHA-256 is
-`3aa6e8f3439418229d9825570377127df191565a1c406a419713b9cf4be85592`.
-Both Go versions match the fixture exactly, with no local module replacements.
-The Go repository's earlier 762-input comparison is historical and is no longer
-the source for its current table. Timed parsing loops are unchanged.
-
-### Historical Rust Optimization
-
-Before upgrading the Go oracle, a separate balanced run compared the original
-published Rust implementation at commit `0ab168c` with the optimized runtime
-against the original v1.4.3-derived fixture. It used six launches per version,
-eight warm passes each and discarded preflights on the same core, validating
-exact results before timing:
-
-| Cohort | Original Rust Warm Pass | Optimized Rust Warm Pass | Original/Optimized Time |
-| --- | --- | --- | --- |
-| Automatic locale detection | 702.39 ms | 24.42 ms | 28.76x |
-| Explicit locales/languages | 127.41 ms | 71.19 ms | 1.79x |
-| HtmlDate strict/past configuration | 691.92 ms | 46.88 ms | 14.76x |
-
-Per-process median ranges, original/optimized, were
-**669.25-787.09 / 23.71-28.21 ms**, **111.66-147.21 / 65.50-82.82 ms**, and
-**640.72-738.56 / 41.90-59.69 ms**, respectively. These samples isolate the Rust
-changes from differences in Go timing between runs; do not combine their
-timings with the current Go/Rust table. The preserved release executables and
-all 36 processes/288 passes are recorded in `optimized-vs-0ab168c.json` under
-the ignored benchmark directory. Earlier Go v1.4.3 comparisons remain in
-`optimized-auto.json`, `optimized-explicit.json` and `optimized-htmldate.json`;
-they are not the current Go baseline. The separate two-engine v1.4.4 runs are
-retained as `go-v1.4.4-{auto,explicit,htmldate}.json`; current Go/Rust ratios come
-only from the shared three-engine experiment above.
+`--output` to choose a report path. The default compares only Rust and the
+published Go v1.4.4 module, without local module replacements or lockfile changes.
+Fixture generation also stays pinned to v1.4.4.
 
 ## Verification
 

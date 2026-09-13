@@ -90,10 +90,10 @@ def main():
     parser.add_argument("--cpu", type=int, default=2)
     parser.add_argument("--cohort", action="append", choices=("auto", "explicit", "htmldate"))
     parser.add_argument("--engine", action="append", choices=ENGINES,
-                        help="repeat to select engines; defaults to all three")
+                        help="repeat to select engines; defaults to Rust and Go v1.4.4")
     parser.add_argument("--output", type=Path, default=Path("target/benchmark/latest.json"))
     arguments = parser.parse_args()
-    engines = arguments.engine or list(ENGINES)
+    engines = arguments.engine or ["rust", "go-v1.4.4"]
     if len(engines) < 2 or len(set(engines)) != len(engines):
         parser.error("select at least two distinct engines")
     orders = list(itertools.permutations(engines))
