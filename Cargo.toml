@@ -8,6 +8,7 @@ repository = "https://github.com/markusmobius/rust-dateparser"
 license = "BSD-3-Clause"
 
 [dependencies]
+aho-corasick = "1.1"
 chrono = { version = "0.4.42", default-features = false, features = ["clock", "std"] }
 chrono-tz = "0.10.4"
 regex = "1.12"

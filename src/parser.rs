@@ -110,64 +110,70 @@ impl Parser {
         Err(Error::UnknownFormat(input.into()))
     }
 
-    fn applicable_locales(
+    fn applicable_locales<'configuration>(
         &self,
-        configuration: &Configuration,
+        configuration: &'configuration Configuration,
         input: &str,
         ignore_surrounding: bool,
         previous: &[&'static locale::Locale],
-    ) -> Result<Vec<&'static locale::Locale>, Error> {
+    ) -> Result<impl Iterator<Item = &'static locale::Locale> + 'configuration, Error> {
         let input = text::normalize(input);
         let popped = timezone::pop_offset(&input).0;
-        let mut inputs = vec![input.as_str()];
+        let mut inputs = vec![text::normalize_digits(&text::normalize(&input))];
         if popped != input {
-            inputs.push(popped.as_str());
+            inputs.push(text::normalize_digits(&text::normalize(&popped)));
         }
-        let applicable = |locale| {
-            inputs
-                .iter()
-                .any(|input| language::applicable(configuration, locale, input, ignore_surrounding))
+        let applicable = move |locale, inputs: &[String]| {
+            inputs.iter().any(|input| {
+                language::applicable_prepared(configuration, locale, input, ignore_surrounding)
+            })
         };
-        let mut results = Vec::new();
-        let mut seen = HashSet::new();
-        if configuration.try_previous_locales {
-            if let Some(&locale) = previous.iter().find(|locale| applicable(locale)) {
-                seen.insert(locale.name.as_str());
-                results.push(locale);
-            }
-        }
+        let previous = if configuration.try_previous_locales {
+            previous
+                .iter()
+                .copied()
+                .find(|locale| applicable(locale, &inputs))
+        } else {
+            None
+        };
         let mut languages = configuration.languages.clone();
         if configuration.locales.is_empty() && languages.is_empty() {
             if let Some(detector) = &self.detect_languages_function {
                 languages.extend(detector(&input));
             }
         }
-        for locale in locale::load(
+        let locales = locale::load(
             &configuration.locales,
             &languages,
             &configuration.region,
             configuration.use_given_order,
-        )? {
-            if !seen.contains(locale.name.as_str()) && applicable(locale) {
-                seen.insert(locale.name.as_str());
-                results.push(locale);
-            }
-        }
-        if !configuration.default_languages.is_empty() {
-            for locale in locale::load(
+        )?;
+        let defaults = if configuration.default_languages.is_empty() {
+            Vec::new()
+        } else {
+            locale::load(
                 &[],
                 &configuration.default_languages,
                 &configuration.region,
                 configuration.use_given_order,
             )
             .unwrap_or_default()
+        };
+        let candidates = previous
+            .into_iter()
+            .map(|locale| (locale, false))
+            .chain(locales.into_iter().map(|locale| (locale, true)))
+            .chain(defaults.into_iter().map(|locale| (locale, false)));
+        let mut seen = HashSet::new();
+        Ok(candidates.filter_map(move |(locale, requires_check)| {
+            if seen.contains(locale.name.as_str())
+                || (requires_check && !applicable(locale, &inputs))
             {
-                if !seen.contains(locale.name.as_str()) {
-                    results.push(locale);
-                }
+                return None;
             }
-        }
-        Ok(results)
+            seen.insert(locale.name.as_str());
+            Some(locale)
+        }))
     }
 
     fn parse_using_locales(
@@ -339,6 +345,53 @@ mod tests {
     use super::*;
     use crate::{DateOrderResolver, PreferredDateSource};
     use chrono::TimeZone;
+
+    #[test]
+    fn locale_preparation_keeps_detector_input() {
+        let observed = Arc::new(Mutex::new(Vec::new()));
+        let callback_inputs = observed.clone();
+        let mut parser = Parser::new();
+        parser.detect_languages_function = Some(Arc::new(move |input| {
+            callback_inputs.lock().unwrap().push(input.to_string());
+            vec!["en".into()]
+        }));
+        let input = "\u{662}\u{660}\u{661}\u{662}-\u{661}\u{662}-\u{661}\u{664}";
+        let date = parser.parse(&Configuration::default(), input, &[]).unwrap();
+        assert_eq!(date.time.format("%F").to_string(), "2012-12-14");
+        assert_eq!(*observed.lock().unwrap(), [input]);
+    }
+
+    #[test]
+    fn previous_locale_does_not_bypass_invalid_configuration() {
+        let parser = Parser::new();
+        let mut configuration = Configuration {
+            try_previous_locales: true,
+            ..Configuration::default()
+        };
+        assert_eq!(
+            parser
+                .parse(&configuration, "12 August 2021", &[])
+                .unwrap()
+                .locale,
+            "en"
+        );
+        configuration.locales = vec!["unknown".into()];
+        assert!(matches!(
+            parser.parse(&configuration, "12 August 2021", &[]),
+            Err(Error::UnknownLocales(_))
+        ));
+        configuration.locales.clear();
+        configuration.languages = vec!["unknown".into()];
+        assert!(matches!(
+            parser.parse(&configuration, "12 August 2021", &[]),
+            Err(Error::UnknownLanguages(_))
+        ));
+        configuration.locales = vec!["en".into(), "en-GB".into()];
+        assert!(matches!(
+            parser.parse(&configuration, "12 August 2021", &[]),
+            Err(Error::ConflictingLocales)
+        ));
+    }
 
     #[test]
     fn shared_parser_keeps_caller_configurations_independent() {

@@ -89,29 +89,29 @@ fn known_word(locale: &Locale, input: &str) -> Option<(usize, usize)> {
         return None;
     }
     let mut earliest = None;
-    for word in &locale.known_words {
-        if word.is_empty() {
+    let mut seen = HashSet::new();
+    for matched in locale.known_word_matcher().find_overlapping_iter(input) {
+        let priority = matched.pattern().as_usize();
+        if !seen.insert(priority) {
             continue;
         }
-        let Some(start) = input.find(word) else {
-            continue;
-        };
-        let end = start + word.len();
+        let start = matched.start();
+        let end = matched.end();
         let allowed = |neighbor: Option<char>| {
             neighbor.is_none_or(|character| !text::is_letter_or_mark(character))
         };
-        if locale.no_word_spacing
-            || (allowed(input[..start].chars().next_back()) && allowed(input[end..].chars().next()))
+        let boundary_matches = locale.no_word_spacing
+            || (allowed(input[..start].chars().next_back())
+                && allowed(input[end..].chars().next()));
+        if boundary_matches
+            && earliest.is_none_or(|(previous, previous_priority, _)| {
+                (start, priority) < (previous, previous_priority)
+            })
         {
-            if earliest.is_none_or(|(previous, _)| start < previous) {
-                earliest = Some((start, end));
-            }
-            if start == 0 {
-                break;
-            }
+            earliest = Some((start, priority, end));
         }
     }
-    earliest
+    earliest.map(|(start, _, end)| (start, end))
 }
 
 fn split_known(locale: &Locale, mut input: &str, formatting: bool) -> Vec<String> {
@@ -217,13 +217,28 @@ fn trim_unknown(locale: &Locale, tokens: Vec<String>) -> Vec<String> {
     tokens[start..end].to_vec()
 }
 
+#[cfg(test)]
 pub(crate) fn applicable(
     configuration: &Configuration,
     locale: &Locale,
     input: &str,
     ignore_surrounding: bool,
 ) -> bool {
-    let input = simplify(locale, &text::normalize_digits(&text::normalize(input)));
+    applicable_prepared(
+        configuration,
+        locale,
+        &text::normalize_digits(&text::normalize(input)),
+        ignore_surrounding,
+    )
+}
+
+pub(crate) fn applicable_prepared(
+    configuration: &Configuration,
+    locale: &Locale,
+    input: &str,
+    ignore_surrounding: bool,
+) -> bool {
+    let input = simplify(locale, input);
     let skipped = skipped_tokens(configuration, locale);
     let tokens = split(locale, &input, false, &skipped);
     let tokens = if ignore_surrounding {
@@ -374,6 +389,49 @@ pub(crate) fn translate(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn known_word_matcher_preserves_first_occurrences_and_priority() {
+        for (words, input, no_word_spacing, expected) in [
+            (vec!["may", "mayday"], "mayday", true, Some((0, 3))),
+            (vec!["mayday", "may"], "mayday", true, Some((0, 6))),
+            (vec!["may", "mayday"], "mayday", false, Some((0, 6))),
+            (vec!["abcd", "b"], "abcd", true, Some((0, 4))),
+            (vec!["may"], "maybe may", false, None),
+            (vec!["may"], "\u{e9}may may", false, None),
+            (vec!["may"], "may\u{301} may", false, None),
+            (vec!["may"], "1may_", false, Some((1, 4))),
+            (vec!["", "may"], "may", false, Some((0, 3))),
+            (vec![], "may", false, None),
+            (vec!["may"], "   ", false, None),
+            (
+                vec!["\u{6708}", "\u{5e74}"],
+                "2013\u{5e74}04\u{6708}08\u{65e5}",
+                true,
+                Some((4, 7)),
+            ),
+        ] {
+            let locale: Locale = serde_json::from_value(serde_json::json!({
+                "name": "test",
+                "date_order": "DMY",
+                "no_word_spacing": no_word_spacing,
+                "simplifications": [],
+                "translations": {},
+                "relative_type": {},
+                "relative_type_regexes": [],
+                "combined": -1,
+                "exact_combined": -1,
+                "known_words": words,
+            }))
+            .unwrap();
+            assert_eq!(
+                known_word(&locale, input),
+                expected,
+                "{input:?} {:?}",
+                locale.known_words
+            );
+        }
+    }
 
     #[test]
     fn translations_preserve_go_whitespace_and_localized_rules() {

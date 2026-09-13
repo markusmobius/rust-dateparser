@@ -214,10 +214,10 @@ fn verify(bytes: &[u8]) {
         fixture.reference.module,
         "github.com/markusmobius/go-dateparser"
     );
-    assert_eq!(fixture.reference.version, "v1.4.3");
+    assert_eq!(fixture.reference.version, "v1.4.4");
     assert_eq!(
         fixture.reference.commit,
-        "ce55302a57663c33e2d7bb668a29686b4c036fde"
+        "577619dabf1814609ac9e3010b34e4dc6b213694"
     );
     assert_eq!(fixture.reference.go_version, "go1.27.1");
     assert_eq!(fixture.reference.text_version, "v0.42.0");
@@ -246,7 +246,7 @@ fn verify(bytes: &[u8]) {
     );
     assert_eq!(
         fixture.reference.module_sum,
-        "h1:FWb52fQDRTdHcRfU8R2hkTW+U4HA4m39ldonanH5x0E="
+        "h1:79+zZ9o3OAo4x7BHlSLhq7u8BD7qBr7kbwb6ilHZVgg="
     );
     assert_eq!(
         fixture
@@ -477,7 +477,7 @@ fn benchmark_public_parse() {
         .unwrap_or_else(|_| "testdata/go-core.json".into());
     let bytes = std::fs::read(path).unwrap();
     let fixture: Fixture = serde_json::from_slice(&bytes).unwrap();
-    assert_eq!(fixture.reference.version, "v1.4.3");
+    assert_eq!(fixture.reference.version, "v1.4.4");
     assert_eq!(
         fixture.reference.wall_year,
         chrono::Local::now().year(),

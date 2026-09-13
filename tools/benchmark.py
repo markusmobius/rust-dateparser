@@ -1,5 +1,6 @@
 import argparse
 import hashlib
+import itertools
 import json
 import math
 import os
@@ -8,7 +9,12 @@ import platform
 import shutil
 import statistics
 import subprocess
+import tempfile
 import time
+
+
+ENGINES = ("rust", "go-v1.4.3", "go-v1.4.4")
+GO_MODULE = "github.com/markusmobius/go-dateparser"
 
 
 def measure(command, environment, root, passes):
@@ -45,7 +51,7 @@ def summarize(records):
     summary = {}
     for cohort in sorted({record["cohort"] for record in records}):
         summary[cohort] = {}
-        for engine in ("rust", "go"):
+        for engine in sorted({record["engine"] for record in records}):
             selected = [
                 record for record in records
                 if record["cohort"] == cohort and record["engine"] == engine
@@ -64,10 +70,16 @@ def summarize(records):
                     record["launch_to_ready_ms"] for record in selected
                 ),
             }
-        summary[cohort]["go_over_rust_time"] = (
-            summary[cohort]["go"]["warm_pass_median_ms"]
-            / summary[cohort]["rust"]["warm_pass_median_ms"]
-        )
+        if "go-v1.4.3" in summary[cohort] and "go-v1.4.4" in summary[cohort]:
+            summary[cohort]["go_old_over_new_time"] = (
+                summary[cohort]["go-v1.4.3"]["warm_pass_median_ms"]
+                / summary[cohort]["go-v1.4.4"]["warm_pass_median_ms"]
+            )
+        if "rust" in summary[cohort] and "go-v1.4.4" in summary[cohort]:
+            summary[cohort]["go_over_rust_time"] = (
+                summary[cohort]["go-v1.4.4"]["warm_pass_median_ms"]
+                / summary[cohort]["rust"]["warm_pass_median_ms"]
+            )
     return summary
 
 
@@ -77,16 +89,24 @@ def main():
     parser.add_argument("--passes", type=int, default=8)
     parser.add_argument("--cpu", type=int, default=2)
     parser.add_argument("--cohort", action="append", choices=("auto", "explicit", "htmldate"))
+    parser.add_argument("--engine", action="append", choices=ENGINES,
+                        help="repeat to select engines; defaults to all three")
     parser.add_argument("--output", type=Path, default=Path("target/benchmark/latest.json"))
     arguments = parser.parse_args()
-    if arguments.runs < 2 or arguments.runs % 2 or arguments.passes < 1:
-        parser.error("use an even number of runs >= 2 and at least one measured pass")
+    engines = arguments.engine or list(ENGINES)
+    if len(engines) < 2 or len(set(engines)) != len(engines):
+        parser.error("select at least two distinct engines")
+    orders = list(itertools.permutations(engines))
+    if arguments.runs < len(orders) or arguments.runs % len(orders) or arguments.passes < 1:
+        parser.error(f"use a positive multiple of {len(orders)} runs and at least one pass")
+    if arguments.cohort and len(set(arguments.cohort)) != len(arguments.cohort):
+        parser.error("select each cohort at most once")
     if not hasattr(os, "sched_getaffinity") or arguments.cpu not in os.sched_getaffinity(0):
         parser.error("run under Linux/WSL and select an available CPU with --cpu")
     root = Path(__file__).resolve().parents[1]
     suite = root / "testdata/go-core.json"
-    fixture_sha256 = hashlib.sha256(suite.read_bytes()).hexdigest()
-    cargo = shutil.which("cargo") or str(Path.home() / ".cargo/bin/cargo")
+    fixture_bytes = suite.read_bytes()
+    fixture_sha256 = hashlib.sha256(fixture_bytes).hexdigest()
     environment = os.environ.copy()
     environment.update({
         "GOTOOLCHAIN": "go1.27.1", "GOMAXPROCS": "1", "CGO_ENABLED": "0",
@@ -95,33 +115,65 @@ def main():
         "RUSTFLAGS": "", "CARGO_ENCODED_RUSTFLAGS": "",
         "DATEPARSER_BENCHMARK_SUITE": str(suite),
     })
-    built = subprocess.run(
-        [cargo, "test", "--locked", "--release", "--lib", "--no-run", "--message-format=json"],
-        cwd=root, env=environment, check=True, stdout=subprocess.PIPE, text=True,
-    )
-    executables = [
-        message["executable"]
-        for line in built.stdout.splitlines()
-        if (message := json.loads(line)).get("reason") == "compiler-artifact"
-        and message.get("executable") and message["target"]["name"] == "rust_dateparser"
-    ]
-    if len(executables) != 1:
-        raise RuntimeError(f"Expected one Rust test executable, found {executables}")
-    rust_binary = Path(executables[0])
-    go_binary = root / "target/dateparser-go-benchmark"
-    subprocess.run(
-        ["go", "build", "-mod=readonly", "-trimpath", "-o", str(go_binary), "."],
-        cwd=root / "tools/go-reference", env=environment, check=True,
-    )
-    versions = {
-        "rust": subprocess.check_output(
+    binaries = {}
+    versions = {}
+    if "rust" in engines:
+        cargo = shutil.which("cargo") or str(Path.home() / ".cargo/bin/cargo")
+        built = subprocess.run(
+            [cargo, "test", "--locked", "--release", "--lib", "--no-run", "--message-format=json"],
+            cwd=root, env=environment, check=True, stdout=subprocess.PIPE, text=True,
+        )
+        executables = [
+            message["executable"]
+            for line in built.stdout.splitlines()
+            if (message := json.loads(line)).get("reason") == "compiler-artifact"
+            and message.get("executable") and message["target"]["name"] == "rust_dateparser"
+        ]
+        if len(executables) != 1:
+            raise RuntimeError(f"Expected one Rust test executable, found {executables}")
+        binaries["rust"] = Path(executables[0])
+        versions["rust"] = subprocess.check_output(
             [str(Path(cargo).with_name("rustc")), "--version"], cwd=root,
             env=environment, text=True,
-        ).strip(),
-        "go": subprocess.check_output(
-            ["go", "version"], cwd=root, env=environment, text=True,
-        ).strip(),
-    }
+        ).strip()
+    versions["go"] = subprocess.check_output(
+        ["go", "version"], cwd=root, env=environment, text=True,
+    ).strip()
+    reference_root = root / "tools/go-reference"
+    build_root = root / "target/benchmark"
+    build_root.mkdir(parents=True, exist_ok=True)
+    go_references = {}
+    with tempfile.TemporaryDirectory(prefix="go-versions-", dir=build_root) as temporary:
+        for engine in engines:
+            if engine == "rust":
+                continue
+            version = engine.removeprefix("go-")
+            module_file = Path(temporary) / f"{engine}.mod"
+            shutil.copyfile(reference_root / "go.mod", module_file)
+            shutil.copyfile(reference_root / "go.sum", module_file.with_suffix(".sum"))
+            subprocess.run(
+                ["go", "mod", "edit", f"-modfile={module_file}", f"-require={GO_MODULE}@{version}"],
+                cwd=reference_root, env=environment, check=True,
+            )
+            module = json.loads(subprocess.check_output(
+                ["go", "mod", "download", "-json", f"-modfile={module_file}",
+                 f"{GO_MODULE}@{version}"],
+                cwd=reference_root, env=environment, text=True,
+            ))
+            if (module.get("Error") or module.get("Path") != GO_MODULE
+                    or module.get("Version") != version or not module.get("Sum")
+                    or not module.get("Origin", {}).get("Hash")):
+                raise RuntimeError(f"Could not verify the published {version} module")
+            go_references[engine] = {
+                "module": GO_MODULE, "version": version,
+                "commit": module["Origin"]["Hash"], "module_sum": module["Sum"],
+            }
+            binaries[engine] = build_root / engine
+            subprocess.run(
+                ["go", "build", f"-modfile={module_file}", "-mod=readonly", "-trimpath",
+                 "-buildvcs=false", "-o", str(binaries[engine]), "."],
+                cwd=reference_root, env=environment, check=True,
+            )
     cpu_model = next(
         line.partition(":")[2].strip()
         for line in Path("/proc/cpuinfo").read_text().splitlines()
@@ -137,13 +189,16 @@ def main():
             "DATEPARSER_BENCHMARK_PASSES": str(passes),
         }
         command = (
-            [str(rust_binary), "--exact", "upstream_tests::benchmark_public_parse",
+            [str(binaries[engine]), "--exact", "upstream_tests::benchmark_public_parse",
              "--ignored", "--nocapture", "--test-threads=1"]
             if engine == "rust" else
-            [str(go_binary), "-benchmark", str(suite), "-cohort", cohort, "-passes", str(passes)]
+            [str(binaries[engine]), "-benchmark", str(suite), "-cohort", cohort,
+             "-passes", str(passes), "-benchmark-version", engine.removeprefix("go-")]
         )
         result = measure(command, child_environment, root, passes)
         metadata = result["metadata"]
+        if engine != "rust" and metadata.get("go_reference") != go_references[engine]:
+            raise RuntimeError("Benchmark binary does not match its published Go module")
         identity = {key: metadata[key] for key in ("cohort", "cases", "parsed", "fixture_sha256")}
         if metadata["fixture_sha256"] != fixture_sha256 or metadata["cohort"] != cohort:
             raise RuntimeError("Benchmark used a different fixture or cohort")
@@ -152,12 +207,11 @@ def main():
         return result | {"engine": engine, "cohort": cohort}
 
     for cohort in arguments.cohort or ("auto", "explicit", "htmldate"):
-        for engine in ("rust", "go"):
+        for engine in engines:
             launch(engine, cohort, 1)
         print(f"{cohort}: preflight discarded", flush=True)
         for index in range(arguments.runs):
-            engines = ("rust", "go") if index % 2 == 0 else ("go", "rust")
-            for engine in engines:
+            for engine in orders[index % len(orders)]:
                 record = launch(engine, cohort, arguments.passes)
                 record["round"] = index + 1
                 records.append(record)
@@ -170,10 +224,12 @@ def main():
         "date": time.strftime("%Y-%m-%d"), "platform": platform.platform(),
         "cpu_model": cpu_model, "cpu": arguments.cpu, "versions": versions,
         "runs_per_engine": arguments.runs, "passes_per_run": arguments.passes,
-        "fixture_sha256": fixture_sha256,
+        "engine_orders": orders, "go_references": go_references,
+        "fixture_sha256": fixture_sha256, "fixture_reference": json.loads(fixture_bytes)["reference"],
+        "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "binary_sha256": {
-            "rust": hashlib.sha256(rust_binary.read_bytes()).hexdigest(),
-            "go": hashlib.sha256(go_binary.read_bytes()).hexdigest(),
+            engine: hashlib.sha256(binary.read_bytes()).hexdigest()
+            for engine, binary in binaries.items()
         },
         "summary": summarize(records), "runs": records,
     }

@@ -27,10 +27,11 @@ func runBenchmark(path, cohort string, passes int, provenance reference) {
 	if err := json.Unmarshal(contents, &data); err != nil {
 		panic(err)
 	}
-	if data.Reference.Module != provenance.Module || data.Reference.Version != provenance.Version ||
-		data.Reference.Commit != provenance.Commit || data.Reference.ModuleSum != provenance.ModuleSum ||
+	expectedReference := pinnedReference("v1.4.4")
+	if data.Reference.Module != expectedReference.Module || data.Reference.Version != expectedReference.Version ||
+		data.Reference.Commit != expectedReference.Commit || data.Reference.ModuleSum != expectedReference.ModuleSum ||
 		data.Reference.GoVersion != provenance.GoVersion || data.Reference.TextVersion != provenance.TextVersion {
-		panic("benchmark fixture does not match the pinned Go reference")
+		panic("benchmark fixture does not match the pinned shared reference")
 	}
 	if data.Reference.WallYear != time.Now().Year() {
 		panic("regenerate the Go fixture for the current wall-clock year")
@@ -94,6 +95,10 @@ func runBenchmark(path, cohort string, passes int, provenance reference) {
 		"parsed":         expectedParsed,
 		"fixture_sha256": fmt.Sprintf("%x", sha256.Sum256(contents)),
 		"first_pass_ms":  firstPassMS,
+		"go_reference": map[string]string{
+			"module": provenance.Module, "version": provenance.Version,
+			"commit": provenance.Commit, "module_sum": provenance.ModuleSum,
+		},
 	}
 	emit := func(prefix string, value any) {
 		encoded, err := json.Marshal(value)

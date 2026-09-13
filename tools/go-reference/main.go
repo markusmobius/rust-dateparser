@@ -129,9 +129,25 @@ type fixture struct {
 	LanguageCases []languageCase `json:"language_cases"`
 }
 
+func pinnedReference(version string) reference {
+	var commit, moduleSum string
+	switch version {
+	case "v1.4.3":
+		commit = "ce55302a57663c33e2d7bb668a29686b4c036fde"
+		moduleSum = "h1:FWb52fQDRTdHcRfU8R2hkTW+U4HA4m39ldonanH5x0E="
+	case "v1.4.4":
+		commit = "577619dabf1814609ac9e3010b34e4dc6b213694"
+		moduleSum = "h1:79+zZ9o3OAo4x7BHlSLhq7u8BD7qBr7kbwb6ilHZVgg="
+	default:
+		panic("unsupported Go-DateParser reference version")
+	}
+	return reference{Module: "github.com/markusmobius/go-dateparser", Version: version, Commit: commit, ModuleSum: moduleSum}
+}
+
 func main() {
 	output := flag.String("output", "../../testdata/go-core.json", "Go-derived fixture destination")
 	benchmark := flag.String("benchmark", "", "benchmark an existing Go fixture without regenerating it")
+	benchmarkVersion := flag.String("benchmark-version", "", "benchmark-only Go version: v1.4.3 or v1.4.4")
 	cohort := flag.String("cohort", "auto", "benchmark cohort: auto, explicit, or htmldate")
 	passes := flag.Int("passes", 8, "measured benchmark passes after the first validated pass")
 	flag.Parse()
@@ -139,10 +155,19 @@ func main() {
 	if !ok {
 		panic("Go build provenance is unavailable")
 	}
-	provenance := reference{Module: "github.com/markusmobius/go-dateparser", Version: "v1.4.3", Commit: "ce55302a57663c33e2d7bb668a29686b4c036fde", GoVersion: info.GoVersion}
+	provenance := pinnedReference("v1.4.4")
+	if *benchmarkVersion != "" {
+		if *benchmark == "" {
+			panic("benchmark-version requires benchmark mode")
+		}
+		provenance = pinnedReference(*benchmarkVersion)
+	}
+	expectedModuleSum := provenance.ModuleSum
+	provenance.ModuleSum = ""
+	provenance.GoVersion = info.GoVersion
 	for _, dependency := range info.Deps {
 		if dependency.Path == provenance.Module {
-			if dependency.Version != provenance.Version || dependency.Replace != nil {
+			if dependency.Version != provenance.Version || dependency.Sum != expectedModuleSum || dependency.Replace != nil {
 				panic("unexpected Go-DateParser reference dependency")
 			}
 			provenance.ModuleSum = dependency.Sum

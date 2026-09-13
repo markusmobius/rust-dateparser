@@ -1,6 +1,7 @@
 use std::{collections::HashMap, sync::OnceLock};
 
 use crate::Error;
+use aho_corasick::AhoCorasick;
 use regex::{Regex, RegexBuilder};
 use serde::Deserialize;
 
@@ -22,6 +23,8 @@ pub(crate) struct Locale {
     pub combined: i32,
     pub exact_combined: i32,
     pub known_words: Vec<String>,
+    #[serde(skip)]
+    known_word_matcher: OnceLock<AhoCorasick>,
 }
 
 #[derive(Deserialize)]
@@ -69,6 +72,18 @@ impl Locales {
 }
 
 impl Locale {
+    pub fn known_word_matcher(&self) -> &AhoCorasick {
+        self.known_word_matcher.get_or_init(|| {
+            AhoCorasick::new(
+                self.known_words
+                    .iter()
+                    .filter(|word| !word.is_empty())
+                    .map(String::as_str),
+            )
+            .expect("pinned known words must compile")
+        })
+    }
+
     pub fn exact_match(&self, input: &str) -> bool {
         self.exact_combined >= 0
             && data()
@@ -82,6 +97,23 @@ impl Locale {
 }
 
 pub(crate) fn load(
+    locales: &[String],
+    languages: &[String],
+    region: &str,
+    given_order: bool,
+) -> Result<Vec<&'static Locale>, Error> {
+    if locales.is_empty() && languages.is_empty() && region.trim().is_empty() {
+        static DEFAULTS: [OnceLock<Vec<&'static Locale>>; 2] = [const { OnceLock::new() }; 2];
+        return Ok(DEFAULTS[usize::from(given_order)]
+            .get_or_init(|| {
+                load_uncached(&[], &[], "", given_order).expect("default locales must load")
+            })
+            .clone());
+    }
+    load_uncached(locales, languages, region, given_order)
+}
+
+fn load_uncached(
     locales: &[String],
     languages: &[String],
     region: &str,
@@ -163,6 +195,21 @@ pub(crate) fn load(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cached_default_locales_preserve_order() {
+        for given_order in [false, true] {
+            let expected = load_uncached(&[], &[], "", given_order).unwrap();
+            for region in ["", "   "] {
+                let actual = load(&[], &[], region, given_order).unwrap();
+                assert_eq!(actual.len(), expected.len());
+                assert!(actual
+                    .iter()
+                    .zip(&expected)
+                    .all(|(actual, expected)| std::ptr::eq(*actual, *expected)));
+            }
+        }
+    }
 
     #[test]
     fn locale_data_contains_all_pinned_rules() {
