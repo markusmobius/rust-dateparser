@@ -175,17 +175,32 @@ func main() {
 	benchmark := flag.String("benchmark", "", "benchmark an existing Go fixture without regenerating it")
 	benchmarkVersion := flag.String("benchmark-version", "", "benchmark-only Go version: v1.4.3, v1.4.4, or verified v1.4.5")
 	benchmarkFeatures := flag.Bool("benchmark-features", false, "benchmark the Python-qualified search and calendar fixture")
-	benchmarkSource := flag.String("benchmark-source", "", "feature-benchmark-only local Go source matching a temporary module replacement")
+	benchmarkSource := flag.String("benchmark-source", "", "benchmark-only local Go source matching a temporary module replacement")
+	benchmarkCorrections := flag.String("benchmark-corrections", "", "Python-qualified expectations for a core worktree benchmark")
 	iterations := flag.Int("iterations", 16, "feature corpus repetitions per measured pass")
 	cohort := flag.String("cohort", "auto", "benchmark cohort: auto, explicit, or htmldate")
 	passes := flag.Int("passes", 8, "measured benchmark passes after the first validated pass")
+	correctionsSource := flag.String("corrections-source", "", "export reviewed worktree corrections without rewriting historical fixtures")
 	flag.Parse()
+	if *correctionsSource != "" {
+		if *benchmark != "" || *featuresOutput != "" || *benchmarkVersion != "" || *benchmarkSource != "" || *benchmarkCorrections != "" {
+			panic("corrections-source cannot be combined with other export modes")
+		}
+		exportCorrections(*correctionsSource, *output)
+		return
+	}
 	if *benchmarkFeatures && *benchmark == "" {
 		panic("benchmark-features requires benchmark mode")
 	}
+	if *benchmarkCorrections != "" && (*benchmark == "" || *benchmarkSource == "" || *benchmarkFeatures) {
+		panic("benchmark-corrections requires a core worktree benchmark")
+	}
 	if *benchmarkSource != "" {
-		if !*benchmarkFeatures || *benchmark == "" || *benchmarkVersion != "" || *featuresOutput != "" {
-			panic("benchmark-source is only allowed for feature benchmarks")
+		if *benchmark == "" || *benchmarkVersion != "" || *featuresOutput != "" {
+			panic("benchmark-source is only allowed for benchmarks")
+		}
+		if !*benchmarkFeatures && *benchmarkCorrections == "" {
+			panic("core worktree benchmarks require Python-qualified corrections")
 		}
 		absolute, err := filepath.Abs(*benchmarkSource)
 		if err != nil {
@@ -215,7 +230,7 @@ func main() {
 		if dependency.Path == provenance.Module {
 			if *benchmarkSource != "" {
 				if dependency.Version != provenance.Version || dependency.Replace == nil || filepath.Clean(dependency.Replace.Path) != *benchmarkSource {
-					panic("feature benchmark source does not match its temporary module replacement")
+					panic("benchmark source does not match its temporary module replacement")
 				}
 				provenance.ModuleSum = expectedModuleSum
 			} else if dependency.Version != provenance.Version || dependency.Sum != expectedModuleSum || dependency.Replace != nil {
@@ -242,7 +257,7 @@ func main() {
 		if *benchmarkFeatures {
 			runFeatureBenchmark(*benchmark, *cohort, *passes, *iterations, provenance)
 		} else {
-			runBenchmark(*benchmark, *cohort, *passes, provenance)
+			runBenchmark(*benchmark, *cohort, *passes, provenance, *benchmarkCorrections)
 		}
 		return
 	}

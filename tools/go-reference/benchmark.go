@@ -12,7 +12,7 @@ import (
 	dps "github.com/markusmobius/go-dateparser"
 )
 
-func runBenchmark(path, cohort string, passes int, provenance reference) {
+func runBenchmark(path, cohort string, passes int, provenance reference, correctionsPath string) {
 	if passes < 1 || !slices.Contains([]string{"auto", "explicit", "htmldate"}, cohort) {
 		panic("benchmark requires a known cohort and at least one measured pass")
 	}
@@ -35,6 +35,52 @@ func runBenchmark(path, cohort string, passes int, provenance reference) {
 	}
 	if data.Reference.WallYear != time.Now().Year() {
 		panic("regenerate the Go fixture for the current wall-clock year")
+	}
+	historicalParsed := map[string]bool{}
+	corrected := map[string]bool{}
+	correctionsSHA256 := ""
+	for _, item := range data.Cases {
+		historicalParsed[item.ID] = item.Expected.Parsed
+	}
+	if correctionsPath != "" {
+		encoded, err := os.ReadFile(correctionsPath)
+		if err != nil {
+			panic(err)
+		}
+		var corrections struct {
+			Reference  reference         `json:"reference"`
+			CoreSHA256 string            `json:"core_sha256"`
+			Core       map[string]result `json:"core"`
+			Python     struct {
+				Version    string `json:"version"`
+				Dateparser string `json:"dateparser"`
+				Dateutil   string `json:"dateutil"`
+			} `json:"python"`
+		}
+		if err := json.Unmarshal(encoded, &corrections); err != nil {
+			panic(err)
+		}
+		if provenance.Version != "worktree" || corrections.Reference.Version != "worktree" ||
+			corrections.Reference.Module != provenance.Module || corrections.Reference.SourceSHA256 != provenance.SourceSHA256 ||
+			corrections.CoreSHA256 != fmt.Sprintf("%x", sha256.Sum256(contents)) ||
+			corrections.Python.Version != "3.14.6" || corrections.Python.Dateparser != "1.4.3" || corrections.Python.Dateutil != "2.9.0.post0" {
+			panic("benchmark corrections do not match the Python-qualified Go source and input fixture")
+		}
+		for index := range data.Cases {
+			item := &data.Cases[index]
+			if expected, exists := corrections.Core[item.ID]; exists {
+				if item.Expected == expected {
+					panic("redundant correction: " + item.ID)
+				}
+				item.Expected = expected
+				corrected[item.ID] = true
+				delete(corrections.Core, item.ID)
+			}
+		}
+		if len(corrections.Core) != 0 {
+			panic("correction references an unknown benchmark input")
+		}
+		correctionsSHA256 = fmt.Sprintf("%x", sha256.Sum256(encoded))
 	}
 	type entry struct {
 		Case          *testCase
@@ -89,16 +135,35 @@ func runBenchmark(path, cohort string, passes int, provenance reference) {
 		}
 	}
 	firstPassMS := float64(time.Since(first)) / float64(time.Millisecond)
+	goReference := map[string]string{
+		"module": provenance.Module, "version": provenance.Version,
+		"commit": provenance.Commit, "module_sum": provenance.ModuleSum,
+	}
+	if provenance.SourceSHA256 != "" {
+		goReference["source_sha256"] = provenance.SourceSHA256
+	}
 	metadata := map[string]any{
 		"cohort":         cohort,
 		"cases":          len(prepared),
 		"parsed":         expectedParsed,
 		"fixture_sha256": fmt.Sprintf("%x", sha256.Sum256(contents)),
 		"first_pass_ms":  firstPassMS,
-		"go_reference": map[string]string{
-			"module": provenance.Module, "version": provenance.Version,
-			"commit": provenance.Commit, "module_sum": provenance.ModuleSum,
-		},
+		"go_reference":   goReference,
+	}
+	if correctionsSHA256 != "" {
+		historicalCount := 0
+		correctedCases := []string{}
+		for _, item := range prepared {
+			if historicalParsed[item.Case.ID] {
+				historicalCount++
+			}
+			if corrected[item.Case.ID] {
+				correctedCases = append(correctedCases, item.Case.ID)
+			}
+		}
+		metadata["historical_parsed"] = historicalCount
+		metadata["corrected_cases"] = correctedCases
+		metadata["corrections_sha256"] = correctionsSHA256
 	}
 	emit := func(prefix string, value any) {
 		encoded, err := json.Marshal(value)

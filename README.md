@@ -11,13 +11,32 @@ embedded locale data, with no Go, Python, native RE2 library, or network service
 required at runtime.
 
 The public API includes localized parsing, split and n-gram search, time spans,
-Jalali parsing and Hijri/Umm al-Qura parsing. RustDateParser **v1.4.5** mirrors
-**Go-DateParser v1.4.5** and **Python dateparser v1.4.3**. Its release version
-follows the Go reference, not the Python version. Calendar and search behavior
-is independently checked against Python; compatibility limits and verification
+Jalali parsing and Hijri/Umm al-Qura parsing. RustDateParser **v1.4.6 (unreleased)**
+tracks the **Go-DateParser v1.4.6 review candidate** at
+[`7837629`](https://github.com/markusmobius/go-dateparser/commit/7837629bf3773c8d94524ec603706bec9a0c665b)
+and **Python dateparser v1.4.3**. Both 1.4.6 versions await review before tagging
+or release; the latest tagged versions remain 1.4.5. Calendar and search behavior
+is independently checked against Python. Compatibility limits and verification
 coverage are documented below.
 
+The unreleased Dateutil integration uses published
+[Rust-Dateutil v2.9.0](https://github.com/markusmobius/rust-dateutil/releases/tag/v2.9.0),
+pinned to commit `205702d70c3b9190cb2b3474cf1593f913549a61` in Cargo. Relative
+arithmetic follows Python's `relativedelta`: month ends clamp, fractional seconds
+retain microsecond precision, and fractional years/months are rejected. Explicit
+invalid Gregorian dates are rejected; omitted days may clamp. These corrections
+were verified against Python first in Go, then in Rust. The published v1.4.5
+release and its historical performance measurements are unchanged.
+
 ## Usage
+
+To try the unreleased candidate from this branch:
+
+```toml
+[dependencies]
+chrono = "0.4.42"
+rust-dateparser = { git = "https://github.com/markusmobius/rust-dateparser", branch = "main", version = "=1.4.6" }
+```
 
 ```rust
 use chrono::TimeZone;
@@ -99,7 +118,9 @@ return errors. Conversion tables and their exact bounds are embedded in
 `Configuration` supports explicit locales or languages/region, given order,
 fallback languages, previous-locale reuse, strict parsing, required date parts,
 skip tokens, surrounding-text handling, date-source/month/day preferences,
-default timezones, time precision, and end-of-month preservation.
+default timezones and time precision. `preserve_end_of_month` is retained as a
+compatibility field but has no effect: relative month/year arithmetic always
+preserves valid month ends, as Python does.
 
 Use `date_order: Some(DateOrder::Dmy)` for a fixed component order. For a
 locale-dependent order, set `date_order_for_locale` to a `DateOrderResolver`;
@@ -148,18 +169,24 @@ independent history.
 | `search`, `search_with_language`, n-grams, time spans, full-text language detection | Implemented |
 | `parse_jalali`, `parse_hijri` / Umm al-Qura | Implemented with native conversion tables |
 
-Search and calendars have 9,886 exact supplementary Go v1.4.5 comparison cases,
-with no excluded cases or substituted inputs. Independent Python fixtures cover
+Search and calendars have 9,886 supplementary Go comparison cases, with no
+excluded cases or substituted inputs. The historical Go v1.4.5 fixtures remain
+byte-identical; [testdata/dateutil-corrections.json](testdata/dateutil-corrections.json)
+records 75 core and 16 search-result corrections from Go commit `7837629`, with
+Python evidence, LF-normalized source hashes and the original fixture hashes. The tests
+check every original input against its qualified result, including exact Go-only
+period labels, timezone identities and nanoseconds. Independent Python fixtures cover
 7,504 calendar cases, 178 exact search cases and ten exception-safety inputs.
 Search-related configuration applies to the search APIs, not `parse`.
 The original regex definitions are executed with Rust's `regex` crate. The
 re2go-generated exact-match functions and optional native/WASM backends are not
 ported or required.
 
-Compatibility follows Go, including its quirks: raw locale date-order metadata,
+Compatibility retains Go-specific APIs and behavior: raw locale date-order metadata,
 two-digit-year preferences, ignored weekday labels in explicit layouts, negative
-timestamp fractions, compact-date strictness shortcuts, and relative-unit
-conversion order. It does not replace those decisions with another date parser.
+timestamp fractions and compact-date strictness shortcuts. Python is the authority
+for date algorithms; reviewed corrections are applied to Go before Rust. The
+Dateutil dependency supplies relative arithmetic only, not absolute-date parsing.
 
 Remaining qualification boundaries include arbitrary Go layouts beyond the
 fixture coverage, extreme year/arithmetic ranges, fixed offsets of 24 hours or
@@ -170,72 +197,127 @@ corpus are not an exhaustive compatibility proof.
 
 ## Speed Comparison
 
-The optimized RustDateParser implementation versus published
-**Go-DateParser v1.4.5**, measured before publication on 2026-09-13 with Rust
-1.98.1 and Go 1.27.1 on an AMD Ryzen AI 7 PRO 350, Linux x86_64/WSL2. Both use
-portable optimized builds, CPU 2 and one parsing caller, without internal
-parallelism. Go uses `GOMAXPROCS=1`, default garbage collection and its pure-Go
-backend.
+These two comparisons share one three-engine measurement on **2026-09-13**:
+published **Rust v1.4.5**, the **Rust v1.4.6 candidate**, and the
+**Go v1.4.6 candidate** at commit `7837629`. The Rust baseline is the untouched
+published source at `0dc203dc0a68968d925a3b9d5cffcba2e73f5c62`, before Dateutil
+integration. Neither 1.4.6 entry represents a published release.
 
-Both repositories use the same Go v1.4.5 samples. The three core cohorts contain
-2,951 stateless public cases from the [core fixture](testdata/go-core.json), with
-their original settings, formats and frozen reference times; 16 detector/history
-cases are excluded. The six feature cohorts contain 7,676 Python-reference cases,
-excluding six callbacks and ten Python exception inputs. Both implementations
-validate the expected results, including rejections, before timing. Parsed counts
-count inputs yielding at least one date, not individual matches or accuracy.
+All engines use portable optimized builds on an AMD Ryzen AI 7 PRO 350,
+Linux x86_64/WSL2, with Rust 1.98.1 and Go 1.27.1. Execution is pinned to CPU 2
+with one parsing caller and no internal parallelism. Go uses `GOMAXPROCS=1`,
+`CGO_ENABLED=0`, `GOAMD64=v1`, default garbage collection and its pure-Go backend.
 
-| Cohort | Inputs (Parsed) | Rust Warm Pass | Go v1.4.5 Warm Pass | Go/Rust Time |
+### Rust v1.4.5 To v1.4.6
+
+Times are milliseconds per complete corpus traversal. An Old/New ratio above
+1 means the Rust v1.4.6 candidate took less time.
+
+| Cohort | Inputs (Parsed) | Rust v1.4.5 | Rust v1.4.6 Candidate | Old/New Time |
 | --- | --- | --- | --- | --- |
-| Automatic locale detection | 226 (222) | 14.90 ms | 150.67 ms | 10.11x |
-| Explicit locales/languages | 2,530 (2,388) | 44.27 ms | 1,017.53 ms | 22.98x |
-| HtmlDate strict/past | 195 (167) | 27.58 ms | 264.97 ms | 9.61x |
-| Automatic search | 3 (3) | 1.11 ms | 9.82 ms | 8.85x |
-| Split search | 34 (29) | 0.87 ms | 23.05 ms | 26.47x |
-| N-gram search | 39 (36) | 3.26 ms | 65.79 ms | 20.18x |
-| Time-span search | 96 (96) | 2.19 ms | 21.88 ms | 9.97x |
-| Jalali parsing | 1,311 (1,087) | 6.99 ms | 12.47 ms | 1.78x |
-| Hijri parsing | 6,193 (5,994) | 8.40 ms | 44.65 ms | 5.32x |
+| Automatic locale detection | 226 (222) | 15.66 ms | 14.99 ms | 1.04x |
+| Explicit locales/languages | 2,530 (2,388) | 43.41 ms | 41.15 ms | 1.05x |
+| HtmlDate strict/past | 195 (167) | 25.59 ms | 25.32 ms | 1.01x |
+| Automatic search | 3 (3) | 1.14 ms | 1.09 ms | 1.05x |
+| Split search | 34 (29) | 0.90 ms | 0.87 ms | 1.03x |
+| N-gram search | 39 (36) | 3.32 ms | 3.49 ms | 0.95x |
+| Time-span search | 96 (96) | 2.20 ms | 2.35 ms | 0.94x |
+| Jalali parsing | 1,311 (1,087) | 7.29 ms | 7.67 ms | 0.95x |
+| Hijri parsing | 6,193 (5,994) | 8.27 ms | 8.49 ms | 0.97x |
 
-Times are per complete corpus traversal, summarized as the median of six
-per-process pass medians. Each process performs eight measured passes after a
-validated first pass; feature passes repeat the corpus 16 times and are divided
-by 16 here. Execution order is balanced and separate preflights are discarded.
-Setup, fixture decoding, initial matcher/regex construction and output checks are
-outside the warm timers. Automatic search has only three texts. Compare engines
-within a row, not different cohorts. These regression-corpus results are not a
-production throughput guarantee.
+The before/after per-process timing ranges overlap in all nine rows. Small
+differences do not establish a performance regression or gain amid run variation.
+Earlier repeats were variable, including automatic-locale candidate process
+medians from 16.74 to 56.38 ms; those samples are retained in the raw report.
+The runs do not establish a consistent Dateutil-related slowdown or prove
+performance equivalence on other workloads.
+
+### Rust And Go v1.4.6
+
+Both columns below are unreleased candidates. The Rust column is the same
+measurement as above; a Go/Rust ratio above 1 means Rust took less time.
+
+| Cohort | Inputs (Parsed) | Rust v1.4.6 Candidate | Go v1.4.6 Candidate | Go/Rust Time |
+| --- | --- | --- | --- | --- |
+| Automatic locale detection | 226 (222) | 14.99 ms | 175.03 ms | 11.67x |
+| Explicit locales/languages | 2,530 (2,388) | 41.15 ms | 836.73 ms | 20.33x |
+| HtmlDate strict/past | 195 (167) | 25.32 ms | 255.27 ms | 10.08x |
+| Automatic search | 3 (3) | 1.09 ms | 10.10 ms | 9.31x |
+| Split search | 34 (29) | 0.87 ms | 24.24 ms | 27.76x |
+| N-gram search | 39 (36) | 3.49 ms | 68.65 ms | 19.69x |
+| Time-span search | 96 (96) | 2.35 ms | 22.48 ms | 9.56x |
+| Jalali parsing | 1,311 (1,087) | 7.67 ms | 13.26 ms | 1.73x |
+| Hijri parsing | 6,193 (5,994) | 8.49 ms | 48.85 ms | 5.75x |
 
 Go reaches the first validated full pass sooner for automatic detection and
-HtmlDate; warmed gains do not imply startup gains. The
-[raw report](https://github.com/markusmobius/go-dateparser/releases/download/v1.4.5/dateparser-nine-cohorts-2026-09-13.json)
-retains all 108 Rust/Go v1.4.5 processes and 864 warm passes across nine cohorts,
-plus the separate Go v1.4.3 comparison. It includes ranges, first-pass latency,
-execution orders, per-suite binary hashes and module provenance. This is a
-dated measurement of the development build, not a claim about every later build.
+the HtmlDate configuration. Warmed parsing results do not imply startup gains.
+"HtmlDate strict/past" measures DateParser with custom-format and absolute
+parsers only; it does not run an HtmlDate library or HTML extraction.
 
-The Rust runtime caches per-locale Aho-Corasick word matchers and default locale
-orders, shares input preparation and checks locale applicability lazily.
-Matchers are built once on first use, not generated at build time. Exact
-dictionary priority, first-occurrence behavior and Unicode boundaries are retained.
+### Method And Reproduction
 
-Reproduce from the repository root under Linux/WSL with Python 3.9+, Rust and Go:
+All three engines receive the same inputs. The three core cohorts contain
+2,951 stateless public cases from the [core fixture](testdata/go-core.json), with
+their original settings, formats and frozen reference times; the existing
+16 detector/history cases are excluded. Each version validates its exact
+expected outputs, including rejections, before timing. The candidates apply the
+separate Python-verified corrections; the published baseline keeps its original
+expected outputs. No inputs were changed to accommodate the integration.
+The six feature cohorts contain 7,676 Python-reference cases, excluding the
+existing six callbacks and ten Python exception inputs. All feature output
+checks pass. Parsed counts count inputs yielding at least one date, not individual
+matches or accuracy.
+
+Each table value is the median of six per-process pass medians. Each process
+performs eight measured passes after a validated first pass. Feature passes
+repeat the corpus 16 times and are divided by 16 here. All six engine-order
+permutations are used once per cohort; separate preflights are discarded, but no
+measured samples are dropped. Setup, fixture decoding, initial matcher/regex
+construction and output checks are outside the warm timers. Automatic search has
+only three texts. Compare engines within a row, not different cohorts. These
+regression-corpus measurements are not a production throughput guarantee.
+
+The [raw report](benchmarks/v1.4.6-review.json) retains all 162 processes and
+1,296 warm passes from this shared comparison, per-process ranges, first-pass
+latency, execution orders, binary/source hashes and module provenance. Earlier
+two-engine runs are retained separately, without pooling or relabelling them.
+This is a dated measurement of the identified candidates, not every later build.
+
+Reproduce from the repository root under Linux/WSL with Python 3.9+, Rust 1.98.1
+and Go 1.27.1. First build an untouched archive of the published Rust baseline:
 
 ```sh
-python3 tools/benchmark.py --runs 6 --passes 8 --cpu 2
-python3 tools/benchmark.py --features --runs 6 --passes 8 --iterations 16 --cpu 2
+mkdir -p target/benchmark/baseline-v1.4.5
+git archive 0dc203dc0a68968d925a3b9d5cffcba2e73f5c62 |
+  tar -x -C target/benchmark/baseline-v1.4.5
+RUSTFLAGS= CARGO_ENCODED_RUSTFLAGS= CARGO_BUILD_JOBS=1 \
+  cargo test --locked --release --lib --no-run \
+  --manifest-path target/benchmark/baseline-v1.4.5/Cargo.toml \
+  --target-dir target/benchmark/baseline-v1.4.5/target
+baseline=$(find target/benchmark/baseline-v1.4.5/target/release/deps \
+  -maxdepth 1 -type f -executable -name 'rust_dateparser-*')
 ```
 
-[tools/benchmark.py](tools/benchmark.py) builds all selected runners, enforces single-core
-execution and saves all samples, toolchain versions, fixture/binary hashes and
-summary statistics under the ignored `target/benchmark/` directory. Use
-`--cohort auto`, `--cohort explicit` or `--cohort htmldate` for one cohort and
-`--output` to choose a report path. The default compares only Rust and the
-published Go v1.4.5 module, without local module replacements or lockfile changes.
-The current fixture exporter is pinned to Go v1.4.5. The archived core report
-predates that provenance update; all 4,302 core case records and 8,952 language
-case records remained unchanged during the rebaseline. The archived report and
-its original hashes are retained without relabelling measurements.
+Use a Go checkout at commit `7837629bf3773c8d94524ec603706bec9a0c665b`:
+
+```sh
+python3 tools/benchmark.py --rust-baseline "$baseline" \
+  --go-source /path/to/go-dateparser \
+  --engine rust-baseline --engine rust --engine go-worktree \
+  --runs 6 --passes 8 --cpu 2 --output target/benchmark/review-core.json
+python3 tools/benchmark.py --rust-baseline "$baseline" \
+  --go-source /path/to/go-dateparser \
+  --engine rust-baseline --engine rust --engine go-worktree \
+  --features --runs 6 --passes 8 --iterations 16 --cpu 2 \
+  --output target/benchmark/review-features.json
+```
+
+[tools/benchmark.py](tools/benchmark.py) builds the current runners and enforces
+single-core execution. The benchmark-only Go replacement lives in a temporary
+module; library lockfiles and the published v1.4.5 fixture exporter are unchanged.
+Select another available CPU with `--cpu` when necessary. New raw samples go
+under the ignored `target/benchmark/` directory, without replacing the checked-in
+review report.
 
 ## Verification
 
@@ -259,6 +341,23 @@ and configuration errors with previous-locale reuse. The default suite also
 includes the complete supplementary Go fixture and independent Python calendar,
 search and overflow checks. Two live Go comparisons and two timing benchmarks
 are opt-in; the checked-in Go feature fixture is not ignored or filtered.
+
+The Dateutil correction verifier runs Python dateparser 1.4.3 and
+python-dateutil 2.9.0.post0 on CPython 3.14.6. It replays the unchanged historical
+inputs against the explicit Go worktree using published Go-Dateutil v2.9.0,
+checks each changed datetime or rejection against Python, and refuses unexpected
+search-membership changes. Python's microsecond results qualify the dates;
+Go's additional nanoseconds and finer period labels remain extension checks.
+
+```sh
+python tools/python-reference/verify_dateutil.py --go-source /path/to/go-dateparser --check
+```
+
+This command requires Go commit `7837629bf3773c8d94524ec603706bec9a0c665b`,
+identified in the correction fixture. Source fingerprints normalize CRLF to LF
+so Windows and Linux checkouts agree. The fixture does not mislabel the candidate
+as a tagged release. Normal Rust tests use the packaged fixture and need neither
+that checkout nor Python.
 
 To generate a fresh, development-only Go reference from this repository root:
 
@@ -301,14 +400,18 @@ $env:PATH = 'C:/msys64/ucrt64/bin;' + $env:PATH
 
 | Reference | Pin |
 | --- | --- |
-| Go-DateParser | v1.4.5, source commit `e02a0cfd80decdd47412d773b4799a89af078409` |
-| Annotated Go tag object | `78257ee87860f23232eced745827eff829cd1a12` (not the source commit) |
-| Go module checksum | `h1:Y34+feJSV/d7QGMbLFlQSfdPDVdhQS5qVL8/sHJ9eKk=` |
+| Go-DateParser candidate | v1.4.6 (unreleased), source commit `7837629bf3773c8d94524ec603706bec9a0c665b` |
+| Historical Go fixture | v1.4.5, source commit `e02a0cfd80decdd47412d773b4799a89af078409` |
+| Historical annotated Go tag | `78257ee87860f23232eced745827eff829cd1a12` (not the source commit) |
+| Historical Go module checksum | `h1:Y34+feJSV/d7QGMbLFlQSfdPDVdhQS5qVL8/sHJ9eKk=` |
+| Go-Dateutil | v2.9.0, source commit `3b89c9d93f415475684a5d477a0664750c3c4dc7` |
+| Rust-Dateutil | v2.9.0, source commit `205702d70c3b9190cb2b3474cf1593f913549a61` |
 | Go oracle | Go 1.27.1, `golang.org/x/text v0.42.0` |
 | Python source behind the Go port | dateparser 1.4.3, `9ce60b1958f1b285886bcfbb743f6419feacfc92` |
 
-Python dateparser 1.4.3 is the behavior authority; Go v1.4.5 is the immediate
-porting reference. The independent [Python fixture](testdata/python-features.json)
+Python dateparser 1.4.3 is the behavior authority; the Go candidate above is the
+immediate porting reference, checked through unchanged v1.4.5 fixtures plus the
+separate verified corrections. The independent [Python fixture](testdata/python-features.json)
 records package versions and imported source hashes. Python exception inputs
 are checked for safe handling, not fabricated successful dates. Go intentionally
 differs from Python in several documented settings and result representations.

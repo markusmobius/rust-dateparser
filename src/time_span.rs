@@ -2,6 +2,7 @@ use std::sync::OnceLock;
 
 use chrono::{DateTime, Datelike, Utc};
 use regex::Regex;
+use rust_dateutil::relativedelta::Delta;
 
 use crate::{calendar, Configuration, Date, Period, SearchResult, Timezone};
 
@@ -47,10 +48,12 @@ fn span(configuration: &Configuration, code: &str, input: &str) -> Option<Vec<Se
         let mut end = base.clone();
         let direction = if *future { 1 } else { -1 };
         let boundary = match *unit {
-            "month" => shift(
+            "month" => calendar::apply_relative(
                 &base,
-                0,
-                direction * i64::from(configuration.default_days_in_month),
+                Delta {
+                    days: (direction * i64::from(configuration.default_days_in_month)) as f64,
+                    ..Delta::default()
+                },
             )?,
             "week" => {
                 let back = if configuration.default_start_of_week == "sunday" {
@@ -65,13 +68,13 @@ fn span(configuration: &Configuration, code: &str, input: &str) -> Option<Vec<Se
             }
             "days" => shift(&base, 0, direction * count)?,
             "weeks" => shift(&base, 0, direction * count.checked_mul(7)?)?,
-            "months" => {
-                let first = shift(&base, direction * count, 1 - i64::from(base.day()))?;
-                let day = base
-                    .day()
-                    .min(calendar::last_day(first.year(), first.month()));
-                shift(&first, 0, i64::from(day) - 1)?
-            }
+            "months" => calendar::apply_relative(
+                &base,
+                Delta {
+                    months: (direction * count) as f64,
+                    ..Delta::default()
+                },
+            )?,
             _ => unreachable!(),
         };
         if *unit != "week" {

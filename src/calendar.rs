@@ -74,6 +74,28 @@ pub(crate) fn add_date(
     )
 }
 
+pub(crate) fn apply_relative(
+    value: &DateTime<Timezone>,
+    delta: rust_dateutil::relativedelta::Delta,
+) -> Option<DateTime<Timezone>> {
+    let adjusted = delta.apply_in(value).ok()?;
+    let zone = value.timezone();
+    let local = adjusted.with_timezone(&zone);
+    if local.naive_local() == adjusted.naive_local() {
+        Some(local)
+    } else {
+        let before = adjusted
+            .naive_local()
+            .checked_sub_signed(Duration::days(1))?;
+        let name = zone
+            .offset_from_local_datetime(&before)
+            .earliest()?
+            .to_string();
+        let fixed = Timezone::fixed(name, adjusted.offset().local_minus_utc()).ok()?;
+        Some(adjusted.with_timezone(&fixed))
+    }
+}
+
 pub(crate) fn apply_month(
     configuration: &Configuration,
     value: &DateTime<Timezone>,

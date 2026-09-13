@@ -1,0 +1,1645 @@
+{
+  "reference": {
+    "module": "github.com/markusmobius/go-dateparser",
+    "version": "worktree",
+    "commit": "7837629bf3773c8d94524ec603706bec9a0c665b",
+    "module_sum": "",
+    "source_sha256": "8886e47f9b103c65b8b057dca47e18e8643591dc652f6c2453ae087295dbc72b",
+    "go_version": "",
+    "text_version": "",
+    "timezone_source_sha256": "",
+    "license_sha256": "",
+    "python_license_sha256": "",
+    "project_license_sha256": "",
+    "locale_data_sha256": "",
+    "language_tests_sha256": "",
+    "parser_tests_sha256": "",
+    "wall_year": 0
+  },
+  "core_sha256": "88b86cd5b6a1f374f33fe8fb365b744a0e71a85de7ceb49515dd90b27b3a3351",
+  "features_sha256": "b7b3e15c53bdf813399b93aae4571a38c03199e29d88f26f7bfe68f34f60de96",
+  "core": {
+    "absolute-0162": {
+      "parsed": false
+    },
+    "absolute-0163": {
+      "parsed": false
+    },
+    "absolute-0164": {
+      "parsed": false
+    },
+    "absolute-0165": {
+      "parsed": false
+    },
+    "absolute-0166": {
+      "parsed": false
+    },
+    "absolute-0169": {
+      "parsed": false
+    },
+    "absolute-0170": {
+      "parsed": false
+    },
+    "absolute-0184": {
+      "parsed": false
+    },
+    "absolute-0185": {
+      "parsed": false
+    },
+    "absolute-0189": {
+      "parsed": false
+    },
+    "absolute-0216": {
+      "parsed": false
+    },
+    "absolute-0225": {
+      "parsed": false
+    },
+    "absolute-0234": {
+      "parsed": false
+    },
+    "absolute-0237": {
+      "parsed": false
+    },
+    "absolute-0249": {
+      "parsed": false
+    },
+    "absolute-0261": {
+      "parsed": false
+    },
+    "absolute-0273": {
+      "parsed": false
+    },
+    "absolute-0285": {
+      "parsed": false
+    },
+    "relative-0974": {
+      "parsed": false
+    },
+    "relative-0975": {
+      "parsed": false
+    },
+    "relative-0976": {
+      "parsed": false
+    },
+    "relative-0981": {
+      "parsed": true,
+      "unix_seconds": 1789216245,
+      "nanosecond": 487654321,
+      "period": "Day",
+      "timezone": "UTC"
+    },
+    "relative-0982": {
+      "parsed": true,
+      "unix_seconds": 1789216245,
+      "nanosecond": 587654321,
+      "period": "Day",
+      "timezone": "UTC"
+    },
+    "relative-0983": {
+      "parsed": true,
+      "unix_seconds": 1789216245,
+      "nanosecond": 487654321,
+      "period": "Day",
+      "timezone": "UTC"
+    },
+    "relative-1014": {
+      "parsed": false
+    },
+    "relative-1015": {
+      "parsed": false
+    },
+    "relative-1016": {
+      "parsed": false
+    },
+    "relative-1021": {
+      "parsed": true,
+      "unix_seconds": 1789216245,
+      "nanosecond": 487654321,
+      "period": "Second",
+      "timezone": "UTC"
+    },
+    "relative-1022": {
+      "parsed": true,
+      "unix_seconds": 1789216245,
+      "nanosecond": 587654321,
+      "period": "Second",
+      "timezone": "UTC"
+    },
+    "relative-1023": {
+      "parsed": true,
+      "unix_seconds": 1789216245,
+      "nanosecond": 487654321,
+      "period": "Second",
+      "timezone": "UTC"
+    },
+    "relative-1054": {
+      "parsed": false
+    },
+    "relative-1055": {
+      "parsed": false
+    },
+    "relative-1056": {
+      "parsed": false
+    },
+    "relative-1061": {
+      "parsed": true,
+      "unix_seconds": 1789216245,
+      "nanosecond": 487654321,
+      "period": "Day",
+      "timezone": "UTC"
+    },
+    "relative-1062": {
+      "parsed": true,
+      "unix_seconds": 1789216245,
+      "nanosecond": 587654321,
+      "period": "Day",
+      "timezone": "UTC"
+    },
+    "relative-1063": {
+      "parsed": true,
+      "unix_seconds": 1789216245,
+      "nanosecond": 487654321,
+      "period": "Day",
+      "timezone": "UTC"
+    },
+    "relative-1094": {
+      "parsed": false
+    },
+    "relative-1095": {
+      "parsed": false
+    },
+    "relative-1096": {
+      "parsed": false
+    },
+    "relative-1101": {
+      "parsed": true,
+      "unix_seconds": 1789216245,
+      "nanosecond": 487654321,
+      "period": "Second",
+      "timezone": "UTC"
+    },
+    "relative-1102": {
+      "parsed": true,
+      "unix_seconds": 1789216245,
+      "nanosecond": 587654321,
+      "period": "Second",
+      "timezone": "UTC"
+    },
+    "relative-1103": {
+      "parsed": true,
+      "unix_seconds": 1789216245,
+      "nanosecond": 487654321,
+      "period": "Second",
+      "timezone": "UTC"
+    },
+    "relative-1134": {
+      "parsed": false
+    },
+    "relative-1135": {
+      "parsed": false
+    },
+    "relative-1136": {
+      "parsed": false
+    },
+    "relative-1141": {
+      "parsed": true,
+      "unix_seconds": 1789216245,
+      "nanosecond": 487654321,
+      "period": "Day",
+      "timezone": "UTC"
+    },
+    "relative-1142": {
+      "parsed": true,
+      "unix_seconds": 1789216245,
+      "nanosecond": 587654321,
+      "period": "Day",
+      "timezone": "UTC"
+    },
+    "relative-1143": {
+      "parsed": true,
+      "unix_seconds": 1789216245,
+      "nanosecond": 487654321,
+      "period": "Day",
+      "timezone": "UTC"
+    },
+    "relative-1174": {
+      "parsed": false
+    },
+    "relative-1175": {
+      "parsed": false
+    },
+    "relative-1176": {
+      "parsed": false
+    },
+    "relative-1181": {
+      "parsed": true,
+      "unix_seconds": 1789216245,
+      "nanosecond": 487654321,
+      "period": "Second",
+      "timezone": "UTC"
+    },
+    "relative-1182": {
+      "parsed": true,
+      "unix_seconds": 1789216245,
+      "nanosecond": 587654321,
+      "period": "Second",
+      "timezone": "UTC"
+    },
+    "relative-1183": {
+      "parsed": true,
+      "unix_seconds": 1789216245,
+      "nanosecond": 487654321,
+      "period": "Second",
+      "timezone": "UTC"
+    },
+    "relative-1204": {
+      "parsed": true,
+      "unix_seconds": 1709209845,
+      "nanosecond": 987654321,
+      "period": "Month",
+      "timezone": "UTC"
+    },
+    "relative-1205": {
+      "parsed": true,
+      "unix_seconds": 1714480245,
+      "nanosecond": 987654321,
+      "period": "Month",
+      "timezone": "UTC"
+    },
+    "relative-1208": {
+      "parsed": true,
+      "unix_seconds": 1709123445,
+      "nanosecond": 987654321,
+      "period": "Day",
+      "timezone": "UTC"
+    },
+    "relative-1209": {
+      "parsed": false
+    },
+    "relative-1215": {
+      "parsed": false
+    },
+    "relative-1216": {
+      "parsed": true,
+      "unix_seconds": 1677587445,
+      "period": "Month",
+      "timezone": "UTC"
+    },
+    "relative-1217": {
+      "parsed": true,
+      "unix_seconds": 1682857845,
+      "period": "Month",
+      "timezone": "UTC"
+    },
+    "relative-1220": {
+      "parsed": true,
+      "unix_seconds": 1677501045,
+      "period": "Day",
+      "timezone": "UTC"
+    },
+    "relative-1221": {
+      "parsed": false
+    },
+    "relative-1227": {
+      "parsed": false
+    },
+    "relative-1230": {
+      "parsed": true,
+      "unix_seconds": 1677587445,
+      "period": "Year",
+      "timezone": "UTC"
+    },
+    "relative-1231": {
+      "parsed": true,
+      "unix_seconds": 1740745845,
+      "period": "Year",
+      "timezone": "UTC"
+    },
+    "relative-1233": {
+      "parsed": false
+    },
+    "relative-1239": {
+      "parsed": false
+    },
+    "relative-1241": {
+      "parsed": true,
+      "unix_seconds": 951827445,
+      "period": "Month",
+      "timezone": "UTC"
+    },
+    "relative-1245": {
+      "parsed": false
+    },
+    "relative-1251": {
+      "parsed": false
+    },
+    "relative-1253": {
+      "parsed": true,
+      "unix_seconds": 1710003600,
+      "offset": -18000,
+      "period": "Hour",
+      "timezone": "America/New_York"
+    },
+    "relative-1265": {
+      "parsed": true,
+      "unix_seconds": 1730563200,
+      "offset": -14400,
+      "period": "Hour",
+      "timezone": "America/New_York"
+    },
+    "relative-1281": {
+      "parsed": true,
+      "unix_seconds": 1711803600,
+      "offset": 3600,
+      "period": "Hour",
+      "timezone": "Europe/Berlin"
+    },
+    "relative-1293": {
+      "parsed": true,
+      "unix_seconds": 1729940400,
+      "offset": 7200,
+      "period": "Hour",
+      "timezone": "Europe/Berlin"
+    }
+  },
+  "features": {
+    "search-1404": [
+      {
+        "text": "next month",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1740763845,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Month",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "next month (start)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1738344645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "next month (end)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1740763845,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      }
+    ],
+    "search-1407": [
+      {
+        "text": "next week and last month",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1741368645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "last month (start)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1735925445,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "last month (end)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1738344645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      }
+    ],
+    "search-1417": [
+      {
+        "text": "next month",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1740763845,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Month",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "next month (start)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1738344645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "next month (end)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1740936645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      }
+    ],
+    "search-1420": [
+      {
+        "text": "next week and last month",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1741368645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "last month (start)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1735752645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "last month (end)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1738344645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      }
+    ],
+    "search-1430": [
+      {
+        "text": "next month",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1740763845,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Month",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "next month (start)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1738344645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "next month (end)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1740763845,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      }
+    ],
+    "search-1433": [
+      {
+        "text": "next week and last month",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1741368645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "last month (start)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1735925445,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "last month (end)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1738344645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      }
+    ],
+    "search-1443": [
+      {
+        "text": "next month",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1740763845,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Month",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "next month (start)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1738344645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "next month (end)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1740936645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      }
+    ],
+    "search-1446": [
+      {
+        "text": "next week and last month",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1741368645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "last month (start)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1735752645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "last month (end)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1738344645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      }
+    ],
+    "search-1515": [
+      {
+        "text": "next month",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1740763845,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Month",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "next month (start)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1738344645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "next month (end)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1740763845,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      }
+    ],
+    "search-1518": [
+      {
+        "text": "next week and last month",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1741368645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "last month (start)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1735925445,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "last month (end)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1738344645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      }
+    ],
+    "search-1528": [
+      {
+        "text": "next month",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1740763845,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Month",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "next month (start)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1738344645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "next month (end)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1740936645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      }
+    ],
+    "search-1531": [
+      {
+        "text": "next week and last month",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1741368645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "last month (start)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1735752645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "last month (end)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1738344645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      }
+    ],
+    "search-1541": [
+      {
+        "text": "next month",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1740763845,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Month",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "next month (start)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1738344645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "next month (end)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1740763845,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      }
+    ],
+    "search-1544": [
+      {
+        "text": "next week and last month",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1741368645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "last month (start)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1735925445,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "last month (end)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1738344645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      }
+    ],
+    "search-1554": [
+      {
+        "text": "next month",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1740763845,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Month",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "next month (start)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1738344645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "next month (end)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1740936645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      }
+    ],
+    "search-1557": [
+      {
+        "text": "next week and last month",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1741368645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "last month (start)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1735752645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      },
+      {
+        "text": "last month (end)",
+        "date": {
+          "locale": "en",
+          "parsed": true,
+          "unix_seconds": 1738344645,
+          "nanosecond": 123456789,
+          "offset": -18000,
+          "period": "Day",
+          "timezone": "America/New_York"
+        }
+      }
+    ]
+  },
+  "python": {
+    "version": "3.14.6",
+    "dateparser": "1.4.3",
+    "dateutil": "2.9.0.post0",
+    "evidence": {
+      "absolute-0162": {
+        "accepted": false
+      },
+      "absolute-0163": {
+        "accepted": false
+      },
+      "absolute-0164": {
+        "accepted": false
+      },
+      "absolute-0165": {
+        "accepted": false
+      },
+      "absolute-0166": {
+        "accepted": false
+      },
+      "absolute-0169": {
+        "accepted": false
+      },
+      "absolute-0170": {
+        "accepted": false
+      },
+      "absolute-0184": {
+        "accepted": false
+      },
+      "absolute-0185": {
+        "accepted": false
+      },
+      "absolute-0189": {
+        "accepted": false
+      },
+      "absolute-0216": {
+        "accepted": false
+      },
+      "absolute-0225": {
+        "accepted": false
+      },
+      "absolute-0234": {
+        "accepted": false
+      },
+      "absolute-0237": {
+        "accepted": false
+      },
+      "absolute-0249": {
+        "accepted": false
+      },
+      "absolute-0261": {
+        "accepted": false
+      },
+      "absolute-0273": {
+        "accepted": false
+      },
+      "absolute-0285": {
+        "accepted": false
+      },
+      "relative-0974": {
+        "accepted": false
+      },
+      "relative-0975": {
+        "accepted": false
+      },
+      "relative-0976": {
+        "accepted": false
+      },
+      "relative-0981": {
+        "accepted": true,
+        "datetime": "2026-09-12T12:30:45.487654"
+      },
+      "relative-0982": {
+        "accepted": true,
+        "datetime": "2026-09-12T12:30:45.587654"
+      },
+      "relative-0983": {
+        "accepted": true,
+        "datetime": "2026-09-12T12:30:45.487654"
+      },
+      "relative-1014": {
+        "accepted": false
+      },
+      "relative-1015": {
+        "accepted": false
+      },
+      "relative-1016": {
+        "accepted": false
+      },
+      "relative-1021": {
+        "accepted": true,
+        "datetime": "2026-09-12T12:30:45.487654"
+      },
+      "relative-1022": {
+        "accepted": true,
+        "datetime": "2026-09-12T12:30:45.587654"
+      },
+      "relative-1023": {
+        "accepted": true,
+        "datetime": "2026-09-12T12:30:45.487654"
+      },
+      "relative-1054": {
+        "accepted": false
+      },
+      "relative-1055": {
+        "accepted": false
+      },
+      "relative-1056": {
+        "accepted": false
+      },
+      "relative-1061": {
+        "accepted": true,
+        "datetime": "2026-09-12T12:30:45.487654"
+      },
+      "relative-1062": {
+        "accepted": true,
+        "datetime": "2026-09-12T12:30:45.587654"
+      },
+      "relative-1063": {
+        "accepted": true,
+        "datetime": "2026-09-12T12:30:45.487654"
+      },
+      "relative-1094": {
+        "accepted": false
+      },
+      "relative-1095": {
+        "accepted": false
+      },
+      "relative-1096": {
+        "accepted": false
+      },
+      "relative-1101": {
+        "accepted": true,
+        "datetime": "2026-09-12T12:30:45.487654"
+      },
+      "relative-1102": {
+        "accepted": true,
+        "datetime": "2026-09-12T12:30:45.587654"
+      },
+      "relative-1103": {
+        "accepted": true,
+        "datetime": "2026-09-12T12:30:45.487654"
+      },
+      "relative-1134": {
+        "accepted": false
+      },
+      "relative-1135": {
+        "accepted": false
+      },
+      "relative-1136": {
+        "accepted": false
+      },
+      "relative-1141": {
+        "accepted": true,
+        "datetime": "2026-09-12T12:30:45.487654"
+      },
+      "relative-1142": {
+        "accepted": true,
+        "datetime": "2026-09-12T12:30:45.587654"
+      },
+      "relative-1143": {
+        "accepted": true,
+        "datetime": "2026-09-12T12:30:45.487654"
+      },
+      "relative-1174": {
+        "accepted": false
+      },
+      "relative-1175": {
+        "accepted": false
+      },
+      "relative-1176": {
+        "accepted": false
+      },
+      "relative-1181": {
+        "accepted": true,
+        "datetime": "2026-09-12T12:30:45.487654"
+      },
+      "relative-1182": {
+        "accepted": true,
+        "datetime": "2026-09-12T12:30:45.587654"
+      },
+      "relative-1183": {
+        "accepted": true,
+        "datetime": "2026-09-12T12:30:45.487654"
+      },
+      "relative-1204": {
+        "accepted": true,
+        "datetime": "2024-02-29T12:30:45.987654"
+      },
+      "relative-1205": {
+        "accepted": true,
+        "datetime": "2024-04-30T12:30:45.987654"
+      },
+      "relative-1208": {
+        "accepted": true,
+        "datetime": "2024-02-28T12:30:45.987654"
+      },
+      "relative-1209": {
+        "accepted": false
+      },
+      "relative-1215": {
+        "accepted": false
+      },
+      "relative-1216": {
+        "accepted": true,
+        "datetime": "2023-02-28T12:30:45"
+      },
+      "relative-1217": {
+        "accepted": true,
+        "datetime": "2023-04-30T12:30:45"
+      },
+      "relative-1220": {
+        "accepted": true,
+        "datetime": "2023-02-27T12:30:45"
+      },
+      "relative-1221": {
+        "accepted": false
+      },
+      "relative-1227": {
+        "accepted": false
+      },
+      "relative-1230": {
+        "accepted": true,
+        "datetime": "2023-02-28T12:30:45"
+      },
+      "relative-1231": {
+        "accepted": true,
+        "datetime": "2025-02-28T12:30:45"
+      },
+      "relative-1233": {
+        "accepted": false
+      },
+      "relative-1239": {
+        "accepted": false
+      },
+      "relative-1241": {
+        "accepted": true,
+        "datetime": "2000-02-29T12:30:45"
+      },
+      "relative-1245": {
+        "accepted": false
+      },
+      "relative-1251": {
+        "accepted": false
+      },
+      "relative-1253": {
+        "accepted": true,
+        "datetime": "2024-03-09T12:00:00"
+      },
+      "relative-1265": {
+        "accepted": true,
+        "datetime": "2024-11-02T12:00:00"
+      },
+      "relative-1281": {
+        "accepted": true,
+        "datetime": "2024-03-30T14:00:00"
+      },
+      "relative-1293": {
+        "accepted": true,
+        "datetime": "2024-10-26T13:00:00"
+      },
+      "search-1404": [
+        {
+          "accepted": true,
+          "datetime": "2025-02-28T12:30:45.123456"
+        }
+      ],
+      "search-1407": [
+        {
+          "accepted": true,
+          "datetime": "2025-03-07T12:30:45.123456"
+        }
+      ],
+      "search-1417": [
+        {
+          "accepted": true,
+          "datetime": "2025-02-28T12:30:45.123456"
+        }
+      ],
+      "search-1420": [
+        {
+          "accepted": true,
+          "datetime": "2025-03-07T12:30:45.123456"
+        }
+      ],
+      "search-1430": [
+        {
+          "accepted": true,
+          "datetime": "2025-02-28T12:30:45.123456"
+        }
+      ],
+      "search-1433": [
+        {
+          "accepted": true,
+          "datetime": "2025-03-07T12:30:45.123456"
+        }
+      ],
+      "search-1443": [
+        {
+          "accepted": true,
+          "datetime": "2025-02-28T12:30:45.123456"
+        }
+      ],
+      "search-1446": [
+        {
+          "accepted": true,
+          "datetime": "2025-03-07T12:30:45.123456"
+        }
+      ],
+      "search-1515": [
+        {
+          "accepted": true,
+          "datetime": "2025-02-28T12:30:45.123456"
+        }
+      ],
+      "search-1518": [
+        {
+          "accepted": true,
+          "datetime": "2025-03-07T12:30:45.123456"
+        }
+      ],
+      "search-1528": [
+        {
+          "accepted": true,
+          "datetime": "2025-02-28T12:30:45.123456"
+        }
+      ],
+      "search-1531": [
+        {
+          "accepted": true,
+          "datetime": "2025-03-07T12:30:45.123456"
+        }
+      ],
+      "search-1541": [
+        {
+          "accepted": true,
+          "datetime": "2025-02-28T12:30:45.123456"
+        }
+      ],
+      "search-1544": [
+        {
+          "accepted": true,
+          "datetime": "2025-03-07T12:30:45.123456"
+        }
+      ],
+      "search-1554": [
+        {
+          "accepted": true,
+          "datetime": "2025-02-28T12:30:45.123456"
+        }
+      ],
+      "search-1557": [
+        {
+          "accepted": true,
+          "datetime": "2025-03-07T12:30:45.123456"
+        }
+      ]
+    }
+  },
+  "source_files": {
+    "benchmark-parser_test.go": "a2bcf8245c2609b3d60025b05140588bd9374f7d2a1e2f191870fa822305c7b2",
+    "benchmark-search_test.go": "80c1dbe7e419ead1a8df5521a3470db63235f776cfeedbffc428860c18d802ec",
+    "config.go": "601e4744d02469465328741cfa7308c780f2a3b4f4453a7befe15a6c37045594",
+    "go.mod": "621c1a427242cc6fdc39c8f10e08c60b7cb1e6315ca202a63781beac7393cd2d",
+    "go.sum": "942b7fe1658ad32f2815d1287cddf8dac22a3c943020f49f09f759caa44fe5d1",
+    "hijri-parser.go": "7dcfebee855f2b036bf2cc7e0023f61860648c260b0eee25a75b40f9ca98fc78",
+    "jalali-parser.go": "7d01c38ff6cd7d680ed133f83bbe7bab98893d4a5573ffbe85204d824eaa3d32",
+    "ngram-search.go": "b45621b17a1e47fce12047c6ced2baefdc8f44449207d7b1b0fa3e319689a0d2",
+    "parser-relative_test.go": "6cc2530bb4b5d90b70dfc608a542dce220d64a4efb73a060121dc1b0301cfef0",
+    "parser.go": "39e27702888f1c638d06ac2fc8ef8f1feb0379d23298cbc1b332287032f33167",
+    "parser_test.go": "62978aa34068ac5a4693f6eb8b64affd464cf23de1d826d574858b4fc97339ec",
+    "python_reference_test.go": "4fbb563ab7895a2ae9b7e407c499ce369e6fa8ec057d48f18a30e7d430f14ed9",
+    "root.go": "c4e173673371813f126f97d209bef8567c5a62f05504b593c2184e041097ae1c",
+    "search.go": "52d7799ff717d94b22ccb656031ec763c09543d7a7d24e46318700b511433592",
+    "search_test.go": "f2533da550c5d5f95c06afb140068436073e8555bfc53e954ddbc73c12fb959e",
+    "time-span.go": "42965fd56744470874e1cd7a21924890c7572cb6980c5c185e6e09d727172089",
+    "util_test.go": "cfdcacf2a67aee5b622b63dfb0a721b1b93b1f5c942cd1bc25c96ede7f425e98",
+    "date/date.go": "5a858918e165bd536d20e457db2f633388729cdb4a82df33c9f3551041fbef81",
+    "internal/data/00-locale-data.go": "11909ccdc9eaaec2eb066bd00d1230badb29a2aa998451389d81768066441fda",
+    "internal/data/01-language-order.go": "c19bde05cee5aa2e1392a9b11496c249a812973464ab07c25be9eaa995fc06be",
+    "internal/data/02-language-map.go": "33669952ad619ed866f0edfae82f224b87e29588fadbb476341a2578883bc933",
+    "internal/data/03-language-locales-map.go": "88cd30c59bdb3e0392860c57a140c1f2ec9b7fb2465930caa2e0bec95ceaf720",
+    "internal/data/04-locale-order.go": "62a1c27cd9b5b7d322c27445950744b9c97c060a7b82519a3c7f5f4381d1e2e1",
+    "internal/data/05-exact-matchers.go": "407a2c5bb45ba803d1bbb36b219722fe74ecf3617de5eecc5f3ec18b03f2090b",
+    "internal/data/af.go": "543ba38059db18ab3bce58db863d5b7023ab9b28fac29842ced3ca8cea2f01f3",
+    "internal/data/agq.go": "837c9adcd2b6592386c959fb2717e700a9ead5d9b0d9beafe10b28eb2326996f",
+    "internal/data/ak.go": "7ed64dc92126d0f2511f694f54ec88d35af57d3fbcc609d4b3a3e94c7216efc7",
+    "internal/data/am.go": "81dd80ebdbbacfb05c785a429e6a7a855ebf1639271abff61d43d36eea6cbf1e",
+    "internal/data/ar.go": "bead62363c20d61ba020f3f96142d9ef5fad8baf1ae6b0f2935bdd236bf9b1c4",
+    "internal/data/as.go": "2250a08b2c2abb46beaf133b2dd6787cc3854c7c7e62a345ef78f478f321036b",
+    "internal/data/asa.go": "febac910ae57bf619e1316336a18a1f9af07500fda453acad7452c161641962b",
+    "internal/data/ast.go": "c6b4c0e54add9c3dbd1cd0f2c64c88533c1eef9468d4afbec41f49ba7dca8c01",
+    "internal/data/az-cyrl.go": "76d0f91d97eb2fbf7fd42cc8b8aba135c98f9e09262ce2e9321b1cf41fa0627c",
+    "internal/data/az-latn.go": "3cc25c80a80c929783c26f9da0f95fcdab3eb9579b46b9e79411f6a1ce567dcf",
+    "internal/data/az.go": "5e47e8928b87d7a5bf4fca47c23608ea37cda3a1be17bc3be1aab8dce413fc68",
+    "internal/data/bas.go": "d42c8052ed512025b8e895a2d683200bd73a867dfbe09dd9b6bcbc316503df8a",
+    "internal/data/be.go": "0da47535419f6cef9a3a5e75dbe204002bf62ca12560f7712ceef99f08ea18db",
+    "internal/data/bem.go": "bdc9be9391f94662420e0af5f0e37ece77408ff68302a49383b05d089b4e341e",
+    "internal/data/bez.go": "8c66abcce742f5ecbeaadd53e12e706e7941deed876a491500779d73ea90325a",
+    "internal/data/bg.go": "f4c15f74feaf32498cce6a63802704e156abaa022a5f4b2d0d89c3e0c0f9ec42",
+    "internal/data/bm.go": "50c37c37378de9aaedde466e25c83a3de043fb37f4e34d4e1672c046725d95be",
+    "internal/data/bn.go": "a9c5f73507e12ae9f0ac175c9744ca823c9fa0eaf51ec6db2168cbcbf2582fd0",
+    "internal/data/bo.go": "7282b87b55fae889734ea6abfe070849fe818f970e158ede0ac1326e533c2769",
+    "internal/data/br.go": "066da7d45b3341a288b17af5c334bc6be637268223f0be652db973cd217ee399",
+    "internal/data/brx.go": "1837c3a6c9b9ed0956a2ee26f33f4ea794a583469cc9699c54439fcc473f7e6f",
+    "internal/data/bs-cyrl.go": "7f2eb5c12d527333f50b20953986ed33d1edd3c5633411ea1f955d40830ce845",
+    "internal/data/bs-latn.go": "c63b5e9d44d60ac4575ab0c29e88ed157b973a6f18b347bd348e004f511efde5",
+    "internal/data/bs.go": "ca456a992d8b57f858ca6fd0b2b4fa800136ace017f21f89f4903809176351eb",
+    "internal/data/ca.go": "a01c767eaa99111c90244ab34efe27a273c5be200a781e0c070156e3263d183b",
+    "internal/data/ce.go": "5905ca75b63c02aebc67b1e263138f7b0f92d2a02b36dfbf82b48fb50902f28b",
+    "internal/data/cgg.go": "449d56d82b22e924f08b399d10fc394902ff90b932c73fb8b7648fe1c17eaf17",
+    "internal/data/chr.go": "fc625d1939318c28d1e00bcc4c3d5f1bc7cec9e8b3ba918acbb3ea30e136d539",
+    "internal/data/ckb.go": "917bb358e5b07ff3b958f29353c9ce3a21a713fdd5eb99332d54d05a5eea5ea9",
+    "internal/data/cs.go": "50f60223f6a948da23d592cf492f73307d70b05f6718c13ed6462e7c0d366e61",
+    "internal/data/cy.go": "737ee785a5906057463cc4736b4206b985e87a049bd4d737bea40b6882e0efb1",
+    "internal/data/da.go": "f9b5f0f88e6bc717a4bc39fc65f289e7e78f17f3b2ff93a277c9bdcb44ee2136",
+    "internal/data/dav.go": "49661fa1e794c4deafcb72ef3c0f1bc738875e782010496dee15139be813206d",
+    "internal/data/de.go": "d578d59cb578909ef8d28f6f656bb494846c5ad05579f1bc0ae301d70ea22061",
+    "internal/data/dje.go": "5c5ad284a1e9e2eba4f0699a3e8cd42715b45dbd6f71afd127a7e12355e6e8a0",
+    "internal/data/dsb.go": "6b034d37a984e830c062290322a3432034e4e9ce9ed74dd66f5d7a8885c6ca0e",
+    "internal/data/dua.go": "180508e8f45bb4951b2923cb6eb67fb9b26c90e7fb47127e7ba0ca59aef629b5",
+    "internal/data/dyo.go": "b726d4bee0aa57734bb05b229d89a8347a00111d146095f3119e38ce8a8a6ed4",
+    "internal/data/dz.go": "fde5ff74c2e1ee63b9da384d6fc6a5906a38e2792dbfbd903aa1864f8f615b1c",
+    "internal/data/ebu.go": "8d24f0b0c2bd656be7b6fa0035a2d2b0c8aac67f90f943d6087d264ddf162d53",
+    "internal/data/ee.go": "5962b485496fca066e73a68968dc4e3244097368022a7c29a6c2e8a581a521d5",
+    "internal/data/el.go": "6c0862049f0d451e8bde9cfdd5958d53650724e0cbe96ecc9ab2ad3fdc661377",
+    "internal/data/en.go": "62632bb8ef99cea773a31f816b11741adc0965e1b3cf2003a30df671f1161e48",
+    "internal/data/eo.go": "303b2ebe6cac8fc29d1517364cb64327ac5dd20f699b4502b1e851a2ba0f295b",
+    "internal/data/es.go": "9b131d9ae36fe5feaca5e29f6c11028c3bfb10948950e6940a0485ea6cce2361",
+    "internal/data/et.go": "9a32f7f55c2f6dac20047d984db7e48c799a87a2a6d2b08b5b9c0536d8cacd5c",
+    "internal/data/eu.go": "a9ca6199fdf40ef14bc4534b796718164d119eb99e7bedccc8157dde3af20c70",
+    "internal/data/ewo.go": "83f4c60f1205f7969aa970eae3e6ba8f30bc0eb4bcb67ff8269c2e72f897f969",
+    "internal/data/fa.go": "1e2d463cf745df54b5e756954c466fc33a1388fa0ab4d6376e71758d27249a31",
+    "internal/data/ff.go": "a6a53d2995ea1fd3c9623ba678d0201915a80921e05a98558ae439862670c989",
+    "internal/data/fi.go": "9b411b3230af5cb01122c28742d7dd9556e287520a6b0d7215d94dbdfc5c137d",
+    "internal/data/fil.go": "6da6b223da64ba4e467602db00edc8f66be1872bcc1817522e31aa736e4ef861",
+    "internal/data/fo.go": "f839492d71bc3879ed1b870e8dc3f8d95b786124bef9b4fe8b6ff6e2feeecd01",
+    "internal/data/fr.go": "4089fe68ea1d53eab1dc9b0349fd784a0072f137acf45fa10abdde90ba45ffff",
+    "internal/data/fur.go": "11e137940a18069cc0fb3ab72e8bb733054c49b0fe7cbb78584b580c2eab2288",
+    "internal/data/fy.go": "8d1d698b0c0dce69c2ada1c2b19e26fe6d38072f2337c77f2bf4059404b9f496",
+    "internal/data/ga.go": "1011ab5b4333e61bbdb004ab9ca734b511e5ce3012d4d73e7bb6465ccace0d23",
+    "internal/data/gd.go": "5de85014d38df2f0bd4d2906854ad74c5ea5ba50d77b582839da5bf686e9ff96",
+    "internal/data/gl.go": "9d252b0fa71fceed40aee290ca77b783a25c2ace7f0e33f63887111c68fe1834",
+    "internal/data/gsw.go": "c13eea9607d312e0f2e49b2182d81726e69880cd3fb8ba9d565125a0961dd940",
+    "internal/data/gu.go": "7f033f9ac6b81a8772fa5d40007761bd2da6b85fc377443253568e8b2238fe57",
+    "internal/data/guz.go": "6dfb6e2364fd1fed204fe4027816c20e7695c5c9c57924308d07890aed9cf6dd",
+    "internal/data/gv.go": "6332d4aa9a219375a26f00815745b71dd32cbd1cbe234fd1e2c85d7c96f4f02b",
+    "internal/data/ha.go": "2128edac20a69388b5c8829e3bb67fd520641d359d412530e85d1d1ffb1e1a53",
+    "internal/data/haw.go": "880812478ce9d8345681d9219845421b75e740c5ca6f5944afd9cc7b66bfece2",
+    "internal/data/he.go": "8d32cc176bfefb66dd2c7713df61a33e0cef6593f7a3bf3a56f22c7f6217da53",
+    "internal/data/hi.go": "1117961747399110226eded565f0e84491e95c294c1dbad2a4cd6f5b7dc2f785",
+    "internal/data/hr.go": "36e9c77dc87ebefabb7a533b80ead9661233f2c44dfe08b25dc50910d258d8d3",
+    "internal/data/hsb.go": "5172b46e5002eadfa3dcfaa0da8adfb2d718f358232b584d48109df9099a9ba2",
+    "internal/data/hu.go": "aa001dfa7be9628b93349dbfae2cc8a283090f481bf177389597a3dd88242954",
+    "internal/data/hy.go": "ce641fda213e062b9d91187c839c9622e6708f0788ce1ad88689d8c7a9543463",
+    "internal/data/id.go": "8c020b4d92cf1e36856faf87902299dd41b857c91746ee7e48ffcdd3e11dc42f",
+    "internal/data/ig.go": "7a3e399c5c8edcdcf74054ebb34be3f2f2c5c657ce431495574712abe696a38e",
+    "internal/data/ii.go": "fe9a407124165a4ff3091a0d78f15cf14f7745401e0a4b4a606f8cebfc98502f",
+    "internal/data/is.go": "497abccde206be134386ac00a2bdb30cb737c46b86d92cda40cdc6ec2ad2c0a6",
+    "internal/data/it.go": "9682d034daecdea075e31e06528114eb237efc2dec79dd3e3667dc910cadd5e2",
+    "internal/data/ja.go": "8494668247a9532811f162b504957e26141332a6aca796404cb4d074bb93e622",
+    "internal/data/jgo.go": "daf9b46e00379cf39beda5aaacb0d658f480b19a3238691f3dc3285bd143d9fe",
+    "internal/data/jmc.go": "e4777cc2878fedb913347c862076085654990d81aefa535f5c32918a2653a1ca",
+    "internal/data/ka.go": "7beb74fced96ebdcdd41dc39953c20f596a0a62bb34e9fc7b65a1659fe2de12e",
+    "internal/data/kab.go": "65fa182590061946eab096eea90e8a88c1ae40189f6c2d066e00857731680666",
+    "internal/data/kam.go": "4f8ce6cb8de70416a40d374d8173660fa1c191a10e3cbe89bb70fdf4cfdc8aa9",
+    "internal/data/kde.go": "67fc15016f666d1b2f3bdaa829b77838add39112133b56f29524f22317fafbb4",
+    "internal/data/kea.go": "17dd9fd422c3f9319818a27789fca240669521d95fa5622d492710c9661c5712",
+    "internal/data/khq.go": "8e88ec75cb835d32c98224ed50dfcdf59ab632476ed906e51576ca3b15a347a5",
+    "internal/data/ki.go": "befedb68e127c54deff189a87fbdbf079eeaffae6145952c3bb978f179c2fa17",
+    "internal/data/kk.go": "6402518d196ec091b0aab710e4050f071ec52a99b2808acf11d26051c039720d",
+    "internal/data/kl.go": "868f8154069a527b8b072d026369d951101b007253567e2a9fdcd9a8e035a68d",
+    "internal/data/kln.go": "1e11e43eec71ddfa6bfcf7f6525d0d7e2654da21a9fd7a229af353d779d7eaf8",
+    "internal/data/km.go": "959b103b871fce61a730fc8a2f112d23f698c72598abef02ed08be5eb0282fc6",
+    "internal/data/kn.go": "48ce250a5bf4037fa0bea23bb14d38dfeb397f64e0a57a8a908208b9afe0de13",
+    "internal/data/ko.go": "9392e32c368119c4d366c01cc47e8b1f912b5ca075cbd210cd7a03400a6d6c14",
+    "internal/data/kok.go": "1b93a420bdeb89f7dadbfe34ced93f0badb9d54b3a0f777c3c784278074fc6de",
+    "internal/data/ks.go": "a4d22d2a2dcc79667c58495dcf34a5847556f921bcd69dfae690764a308128a0",
+    "internal/data/ksb.go": "b49c0a04982d3790e2a9016f8d36d0b618d9703ef67c0b7aab804121c7bc9457",
+    "internal/data/ksf.go": "4fad7ec07e55e16404e4c42156be5b35800ef43f9c4f4ee548ab20afca4d507f",
+    "internal/data/ksh.go": "49f00c8eb1f9bd9b28e1604de70db360c479db4078efd5aea0cf567863e69bec",
+    "internal/data/kw.go": "a04269c9120d96c5555ca25ef10c8fc61e89c626e3357fa9a93863302f6da5ae",
+    "internal/data/ky.go": "8410fb8da3306241ee79987cef4a7657ebc25fa3873b372ce545830a6d145e74",
+    "internal/data/lag.go": "648c8ce72e9e972c6f4ed763bcfa719930447a03446556bcf8c12684864cfa1f",
+    "internal/data/lb.go": "382a5a7f5acea430a1f361a0cc5d5fe807866944e19afbc5a1fd0bf68d78e82a",
+    "internal/data/lg.go": "9f0abccf503a8675b3df462b4a09a722664e2ce733e8fcb4f0c828ee7248f55f",
+    "internal/data/lkt.go": "cb4e46afd4027438be1f6ac72d84d7a611247eac98f18bc01363b91da802b668",
+    "internal/data/ln.go": "b983f7acf7c690b03efe596de1829c6febfbd6012da7389ea185e56c6020f449",
+    "internal/data/lo.go": "13185a2b9e3def92e28be973e382623adf63e843e297f951cfb330dbe4171752",
+    "internal/data/lrc.go": "478e32d1d017901105783778f6233a18fb58d1cd5d252344a4003b8226e0d28d",
+    "internal/data/lt.go": "f5ce3a3599451ff14f66b1b39796cba9545fea938943dd7ecd12415698a45d7a",
+    "internal/data/lu.go": "ef3df0ef1b35828c4e2b4bf664c6d23e8df159c73f41d24b078b289f2a3c9cef",
+    "internal/data/luo.go": "896a931063ee9037746eff289bb24fa2c46b6c58f41250e67c8e0dd4ae809c37",
+    "internal/data/luy.go": "6cf3dea2975f9aa90c488427cbbb5ad8f4da682c8f3b764b49cd3a3a24f46854",
+    "internal/data/lv.go": "5df8c6f417c8d0b5ba1009d9122520b82a383bf7081b35b0bb6bebec4c1a2610",
+    "internal/data/mas.go": "71096733dacf8f07cb5efabafd653e32f99cca178e7adc1f8393bdfce5680443",
+    "internal/data/mer.go": "6b5769194090c17736a5a962e624deeda8822d752f34bf6732a06acb372c5b91",
+    "internal/data/mfe.go": "448860cbb1a95a3321a1212178f490232747e1e215979571d7afde03be455d00",
+    "internal/data/mg.go": "2f20d523d2d8e1309e7ff08fe56eb78851547133b1169424cf214111b99d3a2e",
+    "internal/data/mgh.go": "4f293aa174506c8828a79d0f10f37b7addd1f813919dde7b60cdffc776ce0be4",
+    "internal/data/mgo.go": "e4fb25ac7d615bc4b03a83506ea2ad6dc2ad2aa7042ff1539f51396a59e43c53",
+    "internal/data/mk.go": "91f23434a78611572b3c2140cdca111e88fcfac291772c1c0cee6a67f6663c8a",
+    "internal/data/ml.go": "a9b6f7316a968b6d01f8e44efcbac36935b2f391f3b59897086a3e553c49992a",
+    "internal/data/mn.go": "34e777204439e1d0fb2280156c135e42fcc05ece35226ee34d49f055b527a52b",
+    "internal/data/mr.go": "43df6e8604c9278df788947f0fed5bed4506d61c449a83fb8bc3ff4c39379702",
+    "internal/data/ms.go": "19eeddb22e82174370e6af3d7e046fc53eba109588a93248ad0cfcf1314a28bc",
+    "internal/data/mt.go": "44e3b50dc2c51fd217e37c89b6628ea7ac489ba9d7dd9d1eab83dc60fd8c7b69",
+    "internal/data/mua.go": "d1548633f0c81d3576b2397ab4b309eed14d8ace80e58a64230cc9e205f720bd",
+    "internal/data/my.go": "392314df60629dd92bb6f28f1bd7994b928935ae29c188b91ce1b7f89a91420c",
+    "internal/data/mzn.go": "8f6efefa5ecb07b80115555a93e0462caa64ebd47e78f5faa0308b606a0517e5",
+    "internal/data/naq.go": "1286077ea85028c898cf144c6d7052f4a5730e19264251d9f33efb6582228b51",
+    "internal/data/nb.go": "44297eff1c2a74cad84404fecb4f6e24e109a60d5133e1e924fb4546c7426dfd",
+    "internal/data/nd.go": "fd5a0e42da9849c442f82b2487587436f1a3813ba2f2d1069d256aa582ef2513",
+    "internal/data/ne.go": "863a93d1793144979bdb19a4d9d17c8fdf33a4ba6877847eb823e485b484c0aa",
+    "internal/data/nl.go": "65bac72ead77429f8f584b2039768da0e217be6e273a91e940736eb7b0b38838",
+    "internal/data/nmg.go": "ca9dc66e9f81d6d7e9af8336b54dfdde99deb79c4ea4688b18f2087b9f5805d2",
+    "internal/data/nn.go": "3c3b95b499c09af7eb7a5d4eac9e33f5c1d0974c5ecf0d14f14f3e04a9ca00af",
+    "internal/data/nnh.go": "bef53534e470861ae62bc4d44b1e0d5c80ad69b876d89afc30e1dcc3f143dc16",
+    "internal/data/nus.go": "fb3de2b525064922aed41ead766eea481d683d70737c2e984c03f41a9cf27740",
+    "internal/data/nyn.go": "ccbb9ddbe7cb8f34165e871e38c9926f7bda26c949b28ed22ffe312ea62cf2bd",
+    "internal/data/om.go": "9277e1c88dc30daf1e7a042aa2e8ff0f0c80da2398d47114325c1e86aeee1827",
+    "internal/data/or.go": "21d30bee0ddf52843278937e0be28eec915bd46c8097f0dff2ce7f037febd28d",
+    "internal/data/os.go": "8e60c4b314bc81dcd9a0d50042a86c1bce2feda178e26d768e8a9818a661a581",
+    "internal/data/pa-arab.go": "451b0512a813e26d8bc990a0b6a0173ed961180f52eb7d7df7795befdef4877c",
+    "internal/data/pa-guru.go": "b4912095d465649766b2b6bd129cef0e621915c6f8246b24169727dd298bc2c2",
+    "internal/data/pa.go": "ab561dff0bbd91706a441e73386eb00808966a9ed8800a5dc7ab48a6ce36a43b",
+    "internal/data/pl.go": "3ffee38fe8a5af13400358b985365b157926e594921a8d5d78a3e1488f7e0338",
+    "internal/data/ps.go": "f815e5630a5c22fbdf174fd14ef57695ee5b2cc38b80ee644c53ec2fdf7f7a9d",
+    "internal/data/pt.go": "530eeac9ee05c19e856e57a0ccc51e8037446ffeb9d2d8cc7277d2bfd6f69402",
+    "internal/data/qu.go": "58cb60db85e2e545e7b8ebfcd8da025428fd1ba72de0d300698bfd3e51850eec",
+    "internal/data/rm.go": "1085449680d150b911783528f0fbe29c9da4ea871b655f9305a0ed15e752cca6",
+    "internal/data/rn.go": "31023a94574861f8b730db4df202800c0f344c7622ad9a7f756f0aa1db0a3168",
+    "internal/data/ro.go": "fc9bbd348f00fd6d4a89b105ced6ffb17b77d550995216f99d13090a45c5a900",
+    "internal/data/rof.go": "b4c17e83ded2dfccd0ca283805acd537861bf05ab8a49eb1ec4ee1a75c126061",
+    "internal/data/ru.go": "0bbd230dda2e3a4fca8659fb95620792fe3beba1705df3b22619c617527ef2f7",
+    "internal/data/rw.go": "283da5d7eafdce6e7944912f9ab45d9758177d4dbd5b949f4258d2e3c9805633",
+    "internal/data/rwk.go": "0ef55c4a576dce12fe68d0ea52eca7a0387fc010af257221cb3df7cd7934e8db",
+    "internal/data/sah.go": "3e0a0cf696c38f79aff48877bad699e3afffd356e6bb311213d46cbd84c8b567",
+    "internal/data/saq.go": "1668aac61719986a39c03f58de79dd84f48d39abcd3e06dd1deffd834f982c1f",
+    "internal/data/sbp.go": "716344dacb9eb892dbd6b003997831d0b525374b600520a163a9e634bb1509f6",
+    "internal/data/se.go": "e867090d43fb142f0ca880476423bd90532afc013f340618a7ae479d5e29de2e",
+    "internal/data/seh.go": "faf872b009eeec7ddaaba92548ac9d32b11f3a567edf2bf22ed1c2eb8302f5bd",
+    "internal/data/ses.go": "6081b972842d8f255528f4db74532050bc5f71c3e16e350447bccd32700e33c7",
+    "internal/data/sg.go": "20cdfbb70cda54e188e3126548f493964c5cb842205e727a7bf3de35bced09c8",
+    "internal/data/shi-latn.go": "43f80ca23ea0d1023d224a019c9098c6919eba78ded2de0b675d160292f7715f",
+    "internal/data/shi-tfng.go": "59b13fd9373218b2b411389ab9a9fc5f59f4d0ee6c882d60522213fdbe06e700",
+    "internal/data/shi.go": "491205feb0e6237bf941b607545b0b4745df3cd5842dd06fba37acb2e1210e63",
+    "internal/data/si.go": "c2a3244669985f88e9564194a537400f89df6b44c03b744c32b8055152899291",
+    "internal/data/sk.go": "5ef238292a9fba66e65abf50ff11db5271abce2878a96b2235f24cae0c0c7c5e",
+    "internal/data/sl.go": "2e167d7cc968236b7ae0955059826dd22b28401adf81053cdf36e165d6b9c78b",
+    "internal/data/smn.go": "b6f40d1063e45d6e2fe35763577cc9ae7b37c7f6e3389c27ce50235867c7a45c",
+    "internal/data/sn.go": "d4d95be91d660583c7c1cca2eacbe6605892ef113629df9397904cab0fe79e8b",
+    "internal/data/so.go": "b6db9368e0594ce90f3d3d272e250f60eb6dff5cac2bd0f4c2f5febfa44c2dcb",
+    "internal/data/sq.go": "9932e619d8e882bae5d3439d720bf0971992f21f24b8e4e2a49fba1a7272a2fc",
+    "internal/data/sr-cyrl.go": "5c57dbf9de6fe0c9722c0b1ceb7a279b4082e5b6d8565782f6f9eaf625165353",
+    "internal/data/sr-latn.go": "754cc071fe3a02493151c0c910d74b4db12881b421bf886d595cfbd9ef707cad",
+    "internal/data/sr.go": "af66d0fc56e55bdf9d776779f6962ac85e9e0a4fc11dafc4935eef38cc307238",
+    "internal/data/sv.go": "76d0a986858f160ef352da580e035ab0704618244cb4dd87c2aeca1cb5c90a0f",
+    "internal/data/sw.go": "723618134032bbf98727d173420e7c80ff4b0b132a175715d157e26b9e952d14",
+    "internal/data/ta.go": "96d171dc15f59610e5ceadd5cc10df544edf34a2a969f80edff8c2800057884e",
+    "internal/data/te.go": "5dc9f5da179a14e4d52e193ccdccfa76af46da62b40d53daf940e3d5047562d0",
+    "internal/data/teo.go": "96ca2342718edea175993826c5de4cb8195a749349825eca78d42be26eb37442",
+    "internal/data/th.go": "113c66eb345f5548c1416274a0d3ce557e851cb4b4d8b3852a4e4fd170b06335",
+    "internal/data/ti.go": "f17ffbb62f2af20f2f317fc4fcc5e2ad5baf5007737a5885583bd4ab27a9a475",
+    "internal/data/tl.go": "a68ef2cfa0ee01be348224c3baad71d85d6bdd139a1b48482854da55b0746038",
+    "internal/data/to.go": "abaa700dff43350d9e283545e03ef1d1850ea771b896b3b8f4e09cdc399ed94c",
+    "internal/data/tr.go": "b0c4ccaaec047bf9131139379a7baf4f4b3b3b2e8daf7cbf10b1f4c905376175",
+    "internal/data/twq.go": "191837a99afebaeee7019452a07c47dbffcb959263509bd22acfdb986175b224",
+    "internal/data/tzm.go": "131f352b1155649c22cab2a7f4c3f354362179d47f8bea84525cba1bd8100221",
+    "internal/data/ug.go": "4bbc9dae90bdd6d53b346f31965473820bb6d0b4caec71d6442d90bc4fc3c5e3",
+    "internal/data/uk.go": "129cd7d1b7180dcb2d9513190cb46c274f99a34dedda549b18ec38c4f34196c1",
+    "internal/data/ur.go": "eed5be8c3e22134476538090cc0123d65a25569a374fefe1e5d676508a578b9d",
+    "internal/data/uz-arab.go": "37516c330bc962a2ff826cea3c5eb692c80fd957686bf173ab771deb3585cfae",
+    "internal/data/uz-cyrl.go": "83e82204f3c77fbfc72570df7c82b370c7449e2f3ffe4a2b26566450b3b9e6d6",
+    "internal/data/uz-latn.go": "becc96d30dcf7b96742d6ea854a62a770c28ea74664f291bb2b59cb437683689",
+    "internal/data/uz.go": "2d42ce338a333f2bb6041c1520673bcb54c0da2f7462e39b4accb2646c58f79d",
+    "internal/data/vi.go": "8c5eeec7bb00e57853827f40cb0824579a24e604339e410210ffd0ce3ca713cd",
+    "internal/data/vun.go": "48790fdbd1935a661bca1501cba99bc8e1b18990a7e803c73fcb6b3a2bc4b915",
+    "internal/data/wae.go": "7b39ea7fd82e92c2f6519d66ef766970e8376f0c722b2a64dbf984f799fb68c7",
+    "internal/data/xog.go": "a116e7f4c2f6c49ba390451fec09aafc0e866092c236c0d833dd2f1c731bb40c",
+    "internal/data/yav.go": "80b131f93980bd28eae4a7a7a0428621062eb180f57c104c559d2a2e885f8f24",
+    "internal/data/yi.go": "cb997688ce2d898dace5ab83b4e95c328de328880da594d2008cdba6d3408d11",
+    "internal/data/yo.go": "fb9dcb04cc10547b3a32b521d45926429305eedf3fe624f90179484040830636",
+    "internal/data/yue.go": "82f2efa9e7e8622d88208a861a0168c5ae130df71505c7fc82011f9413e93d70",
+    "internal/data/zgh.go": "e61f9dd16d7f417d4f1b92b329ba78508e31655f1b77b5aa91ce10fbbc72fd7e",
+    "internal/data/zh-hans.go": "1f7b41c12c83263c9e52e444204bfd58e39845e7427686107ab7ad93774d2628",
+    "internal/data/zh-hant.go": "f56281bf3cee2bcdc3c7715175cc7d69e28d66ac5359327c678dbef95ad558c0",
+    "internal/data/zh.go": "ef4933acd62fba6006a0dfab2d5e8791a0e8c333502e526bab45d5809178d9ba",
+    "internal/data/zu.go": "b3efdcb947b730d8ce62392da287f384297b88bd8a4f0df66bfa60ed7579945f",
+    "internal/dateutil/dateutil.go": "c55d68edc4e3460eeef49fe59860f23bb2d5fe54958bb468049c83bf35286a6b",
+    "internal/dateutil/dateutil_test.go": "56129441e1b29692a026f958676098ac18cb1a4debf0665c53057c4e9766be82",
+    "internal/digit/digit.go": "a6a3b283e9cb35dd871df4a1ccd5a3ff4363ab68bd85d7a519555a727670d3bd",
+    "internal/language/00-constant.go": "4a2d762a787ba8f70f4523a2f7d5409d108ab1239740ed2eef981e0ba0022c1e",
+    "internal/language/applicable-check.go": "93d9a4d010e2c5ddecdcae37ec41fdcf554fbb5faa0457a379315593e8c50414",
+    "internal/language/applicable-check_test.go": "d2295b213aa86c2d0a233ff348dae2e59214163a23a48ecbeac686da17b927ba",
+    "internal/language/detector.go": "dd1d2814f2c31cb07e3cc763e7287b4605a1631f3659609d982d123bd84fdf8c",
+    "internal/language/detector_test.go": "5857af4e550eec62d369659328991e7637d1241185022713f54548dff8a7ae50",
+    "internal/language/languages.go": "a48e5b6b620e5c7059f74914baea9d670a3dc0e1342cbdcea9aeb14cab21b503",
+    "internal/language/loader.go": "c994e3d21cbbd03345e979d8a6edab440a82e8ab0201891fb3f4672e43d134fd",
+    "internal/language/loader_test.go": "63251a181cf2c765f73e8d616e1fda3b672be13552f5d112ff6c4daeb9f41c34",
+    "internal/language/split.go": "33f6636db26f0853bb60e2aaadf0108136451250b941e96ac96b4eea52228541",
+    "internal/language/split_test.go": "a50e6cc1e1ae1c0e4529166932cf2318763c7048ef7d672ca8932f9450445c55",
+    "internal/language/translate-search.go": "783dd5954a2f0460e12a12560a88ac9e02822cc876ed53f0f6cd4137e0c46f38",
+    "internal/language/translate-search_test.go": "b09cb46bfdbe03a09a203049aabb9c2c41fb6120bd7b0fe47d75ca14472750de",
+    "internal/language/translate.go": "96dffdf1f4176a2dcb30348e5ae2dbb6d8730af027ff9be8ce3c6188a62cd6e1",
+    "internal/language/translate_test.go": "884701972d0ddeed2d4d3530a63374e8e67693076ed8842be536ffff371d303d",
+    "internal/language/utils.go": "189f7e3f61d5b792803aa8885f97b1b2734fcde1f195293ab0773a3d5dfbe7ee",
+    "internal/parser/absolute/parser.go": "7c41f3b6c1f26c492cd72b35ca38833c59127a6158f403e23964707178868575",
+    "internal/parser/absolute/root.go": "ff69d57a7a9f6448966a58f90a82fa0c2a5ff86cfea22ffcad814a6d27ee6042",
+    "internal/parser/absolute/root_test.go": "1dea991a173f1c010720043b97a8446980f98614de1a9c1c5505581462ed9933",
+    "internal/parser/calendars/data.json": "ad31d61fb903d5f2f5d22a38df22e6cba6c3dcf7322d6f325a27df417ebfc2e2",
+    "internal/parser/calendars/tables.go": "124dbe688867b4efd372cdf00619a51da635662d73faee9bef3c7f9bd1e6bb7e",
+    "internal/parser/calendars/tables_test.go": "f0ff15b811bfd3ee108c451dc55d64be36ee64af113b211365e2b713964aaed6",
+    "internal/parser/common/apply-day.go": "ad2c507459ddbec15a447543471721e6f33c7b1fb9c26e8e4bc615fe72a73313",
+    "internal/parser/common/apply-month.go": "abf64a0815d189414717eb6015c1e1738f0a0954542c7aa5ddb9dd826a7d60b7",
+    "internal/parser/common/strict-check.go": "f4b12bbd5cc6b13245b99afc3b615770e87e920abcf379665542020b48efd818",
+    "internal/parser/common/time.go": "76080e1f6ca1e49705bfac6939f653ca28bc86c3192a6d153a2406d9da1f28c4",
+    "internal/parser/common/time_test.go": "b54e642f8d7d2249d3a36e5aba0aabf8f3596fa493a692b3d26fd9cc83665c96",
+    "internal/parser/formatted/parser.go": "b60fa612083c3fa1b25e640f75ceb46104b2193cf5f5a2fd137032ad60789110",
+    "internal/parser/formatted/parser_test.go": "68b329b4a3affad1f4edbe34b78e978d5edc8250e3c2cb17f44483405e872ba0",
+    "internal/parser/hijri/parser.go": "bf0ec66b0b7a31def903784da0132218c32c0ea2de763a5e68ac025186326150",
+    "internal/parser/hijri/parser_test.go": "bfeb97d331faa967889fd2134e39d9abf46be6aef98378effab290d334071b5f",
+    "internal/parser/jalali/parser.go": "9db2e829c18321535664e6375da08b69e66a1e6d90e7bbc7855cb928ec976347",
+    "internal/parser/jalali/parser_test.go": "78939790f825d40bbf6134950226cfc94eea24a01beac25a6265125b8f6be454",
+    "internal/parser/jalali/translate.go": "40b3fb615fd708fb06276eda3d6f844868b1030071aebfd549c6d69c82db6d9b",
+    "internal/parser/nospace/constants.go": "c3e53b416df9564d9d1af2529ad4bfdd31d8d46b9034153df7d9bb3ba0fee5f7",
+    "internal/parser/nospace/parser.go": "787d608fb87ac4fae59a591d8132a6c53b72a1ce96630fee2cbf856326fdd58c",
+    "internal/parser/nospace/parser_test.go": "e98b7195a1b81913268029400cee0750c6a2aadd8e00f28680a7a82c357ad9bb",
+    "internal/parser/relative/parser.go": "a9a654bbea8e8b0f2180e324ccc716a5916c731fa58ea4f3ad82fe43cbb8845a",
+    "internal/parser/relative/parser_test.go": "2d2791f7411371b81588e94b6e593bcd9b3a65574a168d59e39327bd5c1b711f",
+    "internal/parser/timestamp/parser.go": "621485bae1c79c6b39ce136cfb1cac4fdf6f3df6bc05c2ee02f6d1688e0c38c9",
+    "internal/parser/timestamp/parser_test.go": "f65bf9ad1712e34f77e09602797735052fa28ca1f8dfa3c0f6f5b4a4dba5653f",
+    "internal/parser/tokenizer/tokenizer.go": "a9a2f03bf23883e3352e1debeabbc111867fd63716ed7e3a50dfbd9500590b61",
+    "internal/parser/tokenizer/tokenizer_test.go": "bf94a3af98d9d81e93a3911d42b23788f1777f08acbb6e4f8fad50accb7f29cb",
+    "internal/regexp/regexp-re2.go": "f328e676d9000e678230529dd7e94a7779059d3d9f67596a8356effc7487962a",
+    "internal/regexp/regexp.go": "807e529af154ed10279493644db5b42e47e1e449ea26bc2e6c3ea449fb3a5c2f",
+    "internal/setting/config.go": "049d18fad8b80f0c0a878f39bb33fe07ff03ad7ecaee9dd166125886670178e4",
+    "internal/strutil/dict.go": "814d1c70390b8196d4f31db657c3dfd0a6e0382b1eba79cb54bea7c5482d1218",
+    "internal/strutil/strutil.go": "df1b735a361a15aea1f6063f715039744eb7870af087fd65b3b443629f4cac3e",
+    "internal/strutil/strutil_test.go": "f4dee222e6bfb193ba789c3ccd1850a3a9be8377d016b4bed52a2eec1a82528b",
+    "internal/timezone/loader.go": "4c841537605860f8f95a415625528474470a29e3403185dbe6ac1b896ce7a6bb",
+    "internal/timezone/parser.go": "d5a86a3cac7b30da9cde44c4fe099c64f08598e688ade6c0e811aebdfcd6b668",
+    "internal/timezone/parser_test.go": "ee9abc26c93907f103bb53caa7a84b73a9b6ca92a3a846ab4a50e0bbb09fa5b9",
+    "internal/timezone/timezones.go": "196f4114f49977ebfe4ba6f7f6fc052bb5cf319bf5834594a5a1693fd3a213a3",
+    "internal/timezone/tz-offsets.go": "22ddfdcecc952570926e88d511e8b5eb26aaac25bc46037baa0b34811d3b645d",
+    "scripts/codegen/00-main.go": "11bcc7d8b88b1ab78be2dcbf7a6bc24852600d31863edd2460008851c336ab54",
+    "scripts/codegen/01-logger.go": "ce2f24f149c2b0597c990b60b7949de91167b13652f5b2b34e31d605ebffbfab",
+    "scripts/codegen/02-constants.go": "5e8b6d47c6d619a40e7844b7e37bb516011189a82523ef7fa5a8b65cb798d869",
+    "scripts/codegen/03-model-cldr-gregorian.go": "331f1753c00a77c5ae4a1923e7634ed7d904d7266b251beb1ff580bee8667582",
+    "scripts/codegen/03-model-cldr-territory.go": "55dc3451817250fd4527f513552a306c5a19f156566c2ebc6dbfbec6dfab2307",
+    "scripts/codegen/03-structs.go": "e2380fe84f3de9613f20ff79a34f8d61468845e211b1fe4b3dee2c82f93fac7d",
+    "scripts/codegen/04-utils.go": "9d7b4ff3270091c93638357627a7c0fcea2f787a23fa9fd0164038b51332adb0",
+    "scripts/codegen/05-templates.go": "807e65b2069bcfa0e4f6e9f80123050e4631b320fdf7ab31079efc3954bbd776",
+    "scripts/codegen/code-generator.go": "a3bd4efee4bc087910dcaf0a47918ba7f071b1ae9ccb6eb29de3b05b6e307df7",
+    "scripts/codegen/data-cldr-parser.go": "f7465656ef9d702848822e359b2714ecf3461874b8eb9d95ee74883c02b058cb",
+    "scripts/codegen/data-supplementary-parser.go": "0aa926924dbf7428d8628f80b7adeca55d64cf07239a044f2cf329e5363dec04",
+    "scripts/codegen/data-supplementary-parser_test.go": "37337f5cb75e56cd0a15b480cf3db957723d63359a09a4f01af977549bc0da2d",
+    "scripts/codegen/exact-matcher.go": "ebb0d6a3e1f0789ffc0cc063e8eef53722a0fcadc09e98b262d3b20587f54ca1",
+    "scripts/codegen/exact-matcher_test.go": "02d75123b97692be3cedaf4c4c1b51680f5346511b4c488a26ecef530bf88d8b",
+    "scripts/codegen/language-locales.go": "9009d1b1da12282058e8991d4f795e534614e54d23841ef1ceab7dc90281d59f",
+    "scripts/codegen/language-map.go": "1c19a8f27bc2486d27b0f10d6d53aec8364039e71d2ff85bc81e1f214b25b2c7",
+    "scripts/codegen/language-order.go": "ebf32bd9f3bd4e77b03cd089171e53f2e5231d1b4b702c44b43cc7eb19a06b51",
+    "scripts/codegen/locale-order.go": "5b18a41ee18f41e3c42d8c7b32557b46cf6d38401f07772db04203ceba0b499f",
+    "scripts/codegen/raw-downloader.go": "d367e7e6d3684f3d58eff4806224c68e5bf33fa4e25adf421a912a231bef7b44",
+    "scripts/digit/main.go": "502ce7a27bda50da72c422635427b84254992a66ff7ff9ee60fa2dfe3b0be91c",
+    "scripts/digit/templates.go": "17137657f3347e6176646fd49d4654b8be1dc2612e1f6260ce9dbf42fdb867be",
+    "scripts/speedtest/main.go": "0b4383bb62b52113b49947830a2d16ad48be2ede1968421b0c6177c2c2060ab5"
+  },
+  "source_line_endings": "LF"
+}

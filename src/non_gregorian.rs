@@ -187,7 +187,7 @@ impl Calendar for Jalali {
         &self,
         _configuration: &Configuration,
         [year, month, mut day]: [i32; 3],
-        default_day: bool,
+        [default_day, _default_year]: [bool; 2],
         clock: NaiveTime,
         zone: &Timezone,
     ) -> Result<DateTime<Timezone>, String> {
@@ -218,7 +218,7 @@ impl Calendar for Hijri {
         &self,
         _configuration: &Configuration,
         [year, month, mut day]: [i32; 3],
-        default_day: bool,
+        [default_day, _default_year]: [bool; 2],
         clock: NaiveTime,
         zone: &Timezone,
     ) -> Result<DateTime<Timezone>, String> {

@@ -106,6 +106,7 @@ pub struct Configuration {
     pub return_time_span: bool,
     pub default_start_of_week: String,
     pub default_days_in_month: i32,
+    /// Retained for compatibility; relative arithmetic always clamps month ends.
     pub preserve_end_of_month: bool,
 }
 

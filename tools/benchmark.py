@@ -27,7 +27,7 @@ def source_reference(root):
             path = Path(directory) / name
             relative = path.relative_to(root).as_posix()
             if path.suffix == ".go" or relative in ("go.mod", "go.sum", "internal/parser/calendars/data.json"):
-                sources[relative] = hashlib.sha256(path.read_bytes()).hexdigest()
+                sources[relative] = hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
     encoded = json.dumps(sources, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
     return {
         "module": GO_MODULE, "version": "worktree", "module_sum": "",
@@ -158,7 +158,7 @@ def main():
     parser.add_argument("--cpu", type=int, default=2)
     parser.add_argument("--cohort", action="append", choices=PARSE_COHORTS + FEATURE_COHORTS)
     parser.add_argument("--features", action="store_true", help="benchmark search, time spans, Jalali and Hijri against pinned Python outputs")
-    parser.add_argument("--go-source", type=Path, help="explicit corrected Go checkout for feature benchmarks; never modifies the published reference")
+    parser.add_argument("--go-source", type=Path, help="explicit corrected Go checkout; never modifies the published reference")
     parser.add_argument("--rust-baseline", type=Path, help="preserved Rust benchmark executable for an interleaved before/after comparison")
     parser.add_argument("--iterations", type=int, default=16, help="feature corpus repetitions per warm pass")
     parser.add_argument("--engine", action="append", choices=ENGINES,
@@ -177,8 +177,8 @@ def main():
         parser.error("feature benchmarks support Go v1.4.3, Go v1.4.5, or an explicit --go-source checkout")
     if arguments.go_source:
         arguments.go_source = arguments.go_source.resolve()
-        if not arguments.features or "go-worktree" not in engines or not (arguments.go_source / "go.mod").is_file():
-            parser.error("--go-source requires feature mode, the go-worktree engine, and a Go module checkout")
+        if "go-worktree" not in engines or not (arguments.go_source / "go.mod").is_file():
+            parser.error("--go-source requires the go-worktree engine and a Go module checkout")
     elif "go-worktree" in engines:
         parser.error("go-worktree requires --go-source")
     if arguments.iterations < 1 or (arguments.cohort and any(cohort not in cohorts for cohort in arguments.cohort)):
@@ -302,6 +302,8 @@ def main():
                 command += ["-benchmark-features", "-iterations", str(arguments.iterations)]
             if engine == "go-worktree":
                 command += ["-benchmark-source", str(arguments.go_source)]
+                if not arguments.features:
+                    command += ["-benchmark-corrections", str(root / "testdata/dateutil-corrections.json")]
             else:
                 command += ["-benchmark-version", engine.removeprefix("go-")]
         result = measure(command, child_environment, root, passes)
@@ -312,13 +314,17 @@ def main():
         if arguments.features:
             identity["iterations"] = metadata["iterations"]
         else:
-            identity["parsed"] = metadata["parsed"]
+            if "historical_parsed" in metadata:
+                corrections_hash = hashlib.sha256((root / "testdata/dateutil-corrections.json").read_bytes()).hexdigest()
+                if metadata.get("corrections_sha256") != corrections_hash:
+                    raise RuntimeError("Benchmark corrections do not match the Python-qualified fixture")
+            identity["parsed"] = metadata.get("historical_parsed", metadata["parsed"])
         if metadata["fixture_sha256"] != fixture_sha256 or metadata["cohort"] != cohort:
             raise RuntimeError("Benchmark used a different fixture or cohort")
         if identity != identities.setdefault(cohort, identity):
             raise RuntimeError("Benchmark cohort membership differs between engines")
         engine_identity = {
-            key: metadata[key] for key in ("parsed", "matched_dates", "outcome_sha256", "python_matches", "panics")
+            key: metadata[key] for key in ("parsed", "matched_dates", "outcome_sha256", "python_matches", "panics", "corrections_sha256", "corrected_cases")
             if key in metadata
         }
         if not (arguments.features and engine == "go-v1.4.3") and engine_identity != engine_identities.setdefault((engine, cohort), engine_identity):

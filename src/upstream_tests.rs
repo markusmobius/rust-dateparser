@@ -221,6 +221,95 @@ struct FeatureMatch {
     date: Expected,
 }
 
+#[derive(Deserialize)]
+struct CorrectionReference {
+    module: String,
+    version: String,
+    commit: String,
+    module_sum: String,
+    source_sha256: String,
+}
+
+#[derive(Deserialize)]
+struct CorrectionPython {
+    version: String,
+    dateparser: String,
+    dateutil: String,
+    evidence: std::collections::BTreeMap<String, serde_json::Value>,
+}
+
+#[derive(Deserialize)]
+struct Corrections {
+    reference: CorrectionReference,
+    core_sha256: String,
+    features_sha256: String,
+    core: std::collections::BTreeMap<String, Expected>,
+    features: std::collections::BTreeMap<String, Vec<FeatureMatch>>,
+    python: CorrectionPython,
+    source_files: std::collections::BTreeMap<String, String>,
+}
+
+fn dateutil_corrections() -> Corrections {
+    let corrections: Corrections =
+        serde_json::from_slice(include_bytes!("../testdata/dateutil-corrections.json")).unwrap();
+    assert_eq!(
+        corrections.reference.module,
+        "github.com/markusmobius/go-dateparser"
+    );
+    assert_eq!(corrections.reference.version, "worktree");
+    assert_eq!(
+        corrections.reference.commit,
+        "7837629bf3773c8d94524ec603706bec9a0c665b"
+    );
+    assert!(corrections.reference.module_sum.is_empty());
+    assert_eq!(
+        corrections.reference.source_sha256,
+        format!(
+            "{:x}",
+            Sha256::digest(serde_json::to_vec(&corrections.source_files).unwrap())
+        )
+    );
+    assert_eq!(
+        corrections.core_sha256,
+        format!(
+            "{:x}",
+            Sha256::digest(include_bytes!("../testdata/go-core.json"))
+        )
+    );
+    assert_eq!(
+        corrections.features_sha256,
+        format!(
+            "{:x}",
+            Sha256::digest(include_bytes!("../testdata/go-features.json"))
+        )
+    );
+    assert_eq!(corrections.python.version, "3.14.6");
+    assert_eq!(corrections.python.dateparser, "1.4.3");
+    assert_eq!(corrections.python.dateutil, "2.9.0.post0");
+    assert_eq!(corrections.core.len(), 75);
+    assert_eq!(corrections.features.len(), 16);
+    let identities: std::collections::BTreeSet<_> = corrections
+        .core
+        .keys()
+        .chain(corrections.features.keys())
+        .collect();
+    assert_eq!(identities, corrections.python.evidence.keys().collect());
+    corrections
+}
+
+fn apply_core_corrections(cases: &mut [Case], corrections: &mut Corrections) {
+    for case in cases {
+        if let Some(expected) = corrections.core.remove(&case.id) {
+            assert_ne!(case.expected, expected, "{} is not a correction", case.id);
+            case.expected = expected;
+        }
+    }
+    assert!(
+        corrections.core.is_empty(),
+        "correction references an unknown core input"
+    );
+}
+
 #[derive(Debug, Deserialize)]
 struct FeatureCase {
     id: String,
@@ -436,7 +525,30 @@ fn verify_features(bytes: &[u8]) {
         calendar_data_sha256: String,
         cases: Vec<FeatureCase>,
     }
-    let fixture: FeatureFixture = serde_json::from_slice(bytes).unwrap();
+    let mut fixture: FeatureFixture = serde_json::from_slice(bytes).unwrap();
+    let mut corrections = dateutil_corrections();
+    assert_eq!(
+        corrections.features_sha256,
+        format!("{:x}", Sha256::digest(bytes))
+    );
+    for case in &mut fixture.cases {
+        if let Some(matches) = corrections.features.remove(&case.id) {
+            assert_ne!(case.matches, matches, "{} is not a correction", case.id);
+            assert_eq!(case.matches.len(), matches.len());
+            for (original, corrected) in case.matches.iter().zip(&matches) {
+                assert_eq!(
+                    original.text, corrected.text,
+                    "{} changed a search input",
+                    case.id
+                );
+            }
+            case.matches = matches;
+        }
+    }
+    assert!(
+        corrections.features.is_empty(),
+        "correction references an unknown feature input"
+    );
     assert_eq!(fixture.reference.version, "v1.4.5");
     assert_eq!(
         fixture.reference.commit,
@@ -639,7 +751,7 @@ fn verify_features(bytes: &[u8]) {
         upstream_panics, 0,
         "the Go v1.4.5 fixture must not mask panics"
     );
-    eprintln!("Matched {checked} supplementary Go v1.4.5 cases exactly, with no exceptions or panic inputs");
+    eprintln!("Matched {checked} supplementary Go cases with Python-qualified Dateutil corrections, without exceptions or panic inputs");
 }
 
 #[test]
@@ -648,7 +760,13 @@ fn go_feature_fixture() {
 }
 
 fn verify(bytes: &[u8]) {
-    let fixture: Fixture = serde_json::from_slice(bytes).unwrap();
+    let mut fixture: Fixture = serde_json::from_slice(bytes).unwrap();
+    let mut corrections = dateutil_corrections();
+    assert_eq!(
+        corrections.core_sha256,
+        format!("{:x}", Sha256::digest(bytes))
+    );
+    apply_core_corrections(&mut fixture.cases, &mut corrections);
     assert_eq!(
         fixture.reference.module,
         "github.com/markusmobius/go-dateparser"
@@ -808,7 +926,10 @@ fn verify(bytes: &[u8]) {
             .collect::<Vec<_>>()
             .join("\n")
     );
-    println!("Exact Go parsing parity: {} cases", fixture.cases.len());
+    println!(
+        "Exact Go parsing parity with Python-qualified Dateutil corrections: {} cases",
+        fixture.cases.len()
+    );
 }
 
 #[test]
@@ -927,7 +1048,20 @@ fn benchmark_public_parse() {
     let path = std::env::var("DATEPARSER_BENCHMARK_SUITE")
         .unwrap_or_else(|_| "testdata/go-core.json".into());
     let bytes = std::fs::read(path).unwrap();
-    let fixture: Fixture = serde_json::from_slice(&bytes).unwrap();
+    let mut fixture: Fixture = serde_json::from_slice(&bytes).unwrap();
+    let historical_parsed: std::collections::HashSet<_> = fixture
+        .cases
+        .iter()
+        .filter(|case| case.expected.parsed)
+        .map(|case| case.id.clone())
+        .collect();
+    let mut corrections = dateutil_corrections();
+    assert_eq!(
+        corrections.core_sha256,
+        format!("{:x}", Sha256::digest(&bytes))
+    );
+    let corrected_ids: std::collections::HashSet<_> = corrections.core.keys().cloned().collect();
+    apply_core_corrections(&mut fixture.cases, &mut corrections);
     assert_eq!(fixture.reference.version, "v1.4.5");
     assert_eq!(
         fixture.reference.wall_year,
@@ -1007,6 +1141,9 @@ fn benchmark_public_parse() {
         "cohort": cohort,
         "cases": prepared.len(),
         "parsed": expected_parsed,
+        "historical_parsed": prepared.iter().filter(|entry| historical_parsed.contains(&entry.0.id)).count(),
+        "corrected_cases": prepared.iter().filter(|entry| corrected_ids.contains(&entry.0.id)).map(|entry| &entry.0.id).collect::<Vec<_>>(),
+        "corrections_sha256": format!("{:x}", Sha256::digest(include_bytes!("../testdata/dateutil-corrections.json"))),
         "fixture_sha256": format!("{:x}", Sha256::digest(&bytes)),
         "first_pass_ms": first_pass_ms,
     });

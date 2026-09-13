@@ -35,7 +35,7 @@ pub(crate) trait Calendar {
         &self,
         configuration: &Configuration,
         parts: [i32; 3],
-        default_day: bool,
+        defaults: [bool; 2],
         clock: NaiveTime,
         zone: &Timezone,
     ) -> Result<DateTime<Timezone>, String>;
@@ -60,14 +60,23 @@ impl Calendar for Gregorian {
         &self,
         configuration: &Configuration,
         [mut year, month, mut day]: [i32; 3],
-        _default_day: bool,
+        [default_day, default_year]: [bool; 2],
         clock: NaiveTime,
         zone: &Timezone,
     ) -> Result<DateTime<Timezone>, String> {
-        if day == 29 && month == 2 && !leap_year(year) {
+        if !(1..=9999).contains(&year) || !(1..=12).contains(&month) || day < 1 {
+            return Err(calendar_range_error());
+        }
+        if default_year && day == 29 && month == 2 && !leap_year(year) {
             year = correct_leap_year(year, configuration.preferred_date_source);
         }
-        day = day.min(last_day(year, month as u32) as i32);
+        let last = last_day(year, month as u32) as i32;
+        if day > last {
+            if !default_day {
+                return Err(calendar_range_error());
+            }
+            day = last;
+        }
         date_time(year, month, day, clock, zone).ok_or_else(calendar_range_error)
     }
 }
@@ -440,7 +449,7 @@ impl<CalendarType: Calendar> Parser<'_, CalendarType> {
         let mut value = self.calendar.create_date(
             self.configuration,
             [year, month, day],
-            !has(Part::Day) && !has(Part::Weekday),
+            [!has(Part::Day), !has(Part::Year)],
             clock,
             &self.now.timezone(),
         )?;
@@ -638,6 +647,46 @@ mod tests {
                     .unwrap(),
             ),
             ..Configuration::default()
+        }
+    }
+
+    #[test]
+    fn python_explicit_calendar_validation() {
+        let mut configuration = configuration();
+        configuration.current_time = Some(
+            Timezone::Utc
+                .with_ymd_and_hms(2023, 1, 31, 12, 0, 0)
+                .unwrap(),
+        );
+        configuration.date_order = Some(DateOrder::Dmy);
+        configuration.strict_parsing = true;
+        for input in [
+            "33 December 2020",
+            "33.20.2004",
+            "36/14/2016",
+            "30 February 2020",
+            "36 January 2020",
+            "29 February 2019",
+            "31 April 2020",
+            "13-1998",
+        ] {
+            assert!(parse(&configuration, input, None).is_none(), "{input}");
+        }
+        configuration.strict_parsing = false;
+        for (input, expected) in [
+            ("29 February 2020", "2020-02-29"),
+            ("February 2020", "2020-02-29"),
+            ("13-1998", "1998-01-13"),
+        ] {
+            assert_eq!(
+                parse(&configuration, input, None)
+                    .unwrap()
+                    .time
+                    .format("%F")
+                    .to_string(),
+                expected,
+                "{input}"
+            );
         }
     }
 
