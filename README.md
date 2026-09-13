@@ -11,15 +11,13 @@ embedded locale data, with no Go, Python, native RE2 library, or network service
 required at runtime.
 
 The public API includes localized parsing, split and n-gram search, time spans,
-Jalali parsing and Hijri/Umm al-Qura parsing. RustDateParser **v1.4.6 (unreleased)**
-tracks the **Go-DateParser v1.4.6 review candidate** at
-[`7837629`](https://github.com/markusmobius/go-dateparser/commit/7837629bf3773c8d94524ec603706bec9a0c665b)
-and **Python dateparser v1.4.3**. Both 1.4.6 versions await review before tagging
-or release; the latest tagged versions remain 1.4.5. Calendar and search behavior
-is independently checked against Python. Compatibility limits and verification
-coverage are documented below.
+Jalali parsing and Hijri/Umm al-Qura parsing. RustDateParser **v1.4.6** tracks
+[Go-DateParser v1.4.6](https://github.com/markusmobius/go-dateparser/releases/tag/v1.4.6)
+and **Python dateparser v1.4.3**. Calendar and search behavior is independently
+checked against Python. Compatibility limits and verification coverage are
+documented below.
 
-The unreleased Dateutil integration uses published
+The Dateutil integration uses published
 [Rust-Dateutil v2.9.0](https://github.com/markusmobius/rust-dateutil/releases/tag/v2.9.0),
 pinned to commit `205702d70c3b9190cb2b3474cf1593f913549a61` in Cargo. Relative
 arithmetic follows Python's `relativedelta`: month ends clamp, fractional seconds
@@ -30,12 +28,12 @@ release and its historical performance measurements are unchanged.
 
 ## Usage
 
-To try the unreleased candidate from this branch:
+Use the tagged v1.4.6 release:
 
 ```toml
 [dependencies]
 chrono = "0.4.42"
-rust-dateparser = { git = "https://github.com/markusmobius/rust-dateparser", branch = "main", version = "=1.4.6" }
+rust-dateparser = { git = "https://github.com/markusmobius/rust-dateparser", tag = "v1.4.6", version = "=1.4.6" }
 ```
 
 ```rust
@@ -197,11 +195,12 @@ corpus are not an exhaustive compatibility proof.
 
 ## Speed Comparison
 
-These two comparisons share one three-engine measurement on **2026-09-13**:
-published **Rust v1.4.5**, the **Rust v1.4.6 candidate**, and the
-**Go v1.4.6 candidate** at commit `7837629`. The Rust baseline is the untouched
+These two comparisons share one pre-release three-engine measurement on
+**2026-09-13**: published **Rust v1.4.5**, **Rust v1.4.6**, and **Go v1.4.6**
+at its review commit `7837629`. The Rust baseline is the untouched
 published source at `0dc203dc0a68968d925a3b9d5cffcba2e73f5c62`, before Dateutil
-integration. Neither 1.4.6 entry represents a published release.
+integration. The 1.4.6 releases retain the measured runtimes unchanged; the raw
+report preserves the original pre-release source and executable identities.
 
 All engines use portable optimized builds on an AMD Ryzen AI 7 PRO 350,
 Linux x86_64/WSL2, with Rust 1.98.1 and Go 1.27.1. Execution is pinned to CPU 2
@@ -211,9 +210,9 @@ with one parsing caller and no internal parallelism. Go uses `GOMAXPROCS=1`,
 ### Rust v1.4.5 To v1.4.6
 
 Times are milliseconds per complete corpus traversal. An Old/New ratio above
-1 means the Rust v1.4.6 candidate took less time.
+1 means Rust v1.4.6 took less time.
 
-| Cohort | Inputs (Parsed) | Rust v1.4.5 | Rust v1.4.6 Candidate | Old/New Time |
+| Cohort | Inputs (Parsed) | Rust v1.4.5 | Rust v1.4.6 | Old/New Time |
 | --- | --- | --- | --- | --- |
 | Automatic locale detection | 226 (222) | 15.66 ms | 14.99 ms | 1.04x |
 | Explicit locales/languages | 2,530 (2,388) | 43.41 ms | 41.15 ms | 1.05x |
@@ -234,10 +233,10 @@ performance equivalence on other workloads.
 
 ### Rust And Go v1.4.6
 
-Both columns below are unreleased candidates. The Rust column is the same
-measurement as above; a Go/Rust ratio above 1 means Rust took less time.
+The Rust column is the same pre-release measurement as above; a Go/Rust ratio
+above 1 means Rust took less time.
 
-| Cohort | Inputs (Parsed) | Rust v1.4.6 Candidate | Go v1.4.6 Candidate | Go/Rust Time |
+| Cohort | Inputs (Parsed) | Rust v1.4.6 | Go v1.4.6 | Go/Rust Time |
 | --- | --- | --- | --- | --- |
 | Automatic locale detection | 226 (222) | 14.99 ms | 175.03 ms | 11.67x |
 | Explicit locales/languages | 2,530 (2,388) | 41.15 ms | 836.73 ms | 20.33x |
@@ -355,9 +354,10 @@ python tools/python-reference/verify_dateutil.py --go-source /path/to/go-datepar
 
 This command requires Go commit `7837629bf3773c8d94524ec603706bec9a0c665b`,
 identified in the correction fixture. Source fingerprints normalize CRLF to LF
-so Windows and Linux checkouts agree. The fixture does not mislabel the candidate
-as a tagged release. Normal Rust tests use the packaged fixture and need neither
-that checkout nor Python.
+so Windows and Linux checkouts agree. The fixture preserves the original
+pre-release source identity rather than relabelling it as the release tag.
+Normal Rust tests use the packaged fixture and need neither that checkout nor
+Python.
 
 To generate a fresh, development-only Go reference from this repository root:
 
@@ -400,7 +400,8 @@ $env:PATH = 'C:/msys64/ucrt64/bin;' + $env:PATH
 
 | Reference | Pin |
 | --- | --- |
-| Go-DateParser candidate | v1.4.6 (unreleased), source commit `7837629bf3773c8d94524ec603706bec9a0c665b` |
+| Go-DateParser | [v1.4.6](https://github.com/markusmobius/go-dateparser/releases/tag/v1.4.6) |
+| Go correction/benchmark source | Pre-release commit `7837629bf3773c8d94524ec603706bec9a0c665b`, with the same runtime as v1.4.6 |
 | Historical Go fixture | v1.4.5, source commit `e02a0cfd80decdd47412d773b4799a89af078409` |
 | Historical annotated Go tag | `78257ee87860f23232eced745827eff829cd1a12` (not the source commit) |
 | Historical Go module checksum | `h1:Y34+feJSV/d7QGMbLFlQSfdPDVdhQS5qVL8/sHJ9eKk=` |
@@ -409,7 +410,7 @@ $env:PATH = 'C:/msys64/ucrt64/bin;' + $env:PATH
 | Go oracle | Go 1.27.1, `golang.org/x/text v0.42.0` |
 | Python source behind the Go port | dateparser 1.4.3, `9ce60b1958f1b285886bcfbb743f6419feacfc92` |
 
-Python dateparser 1.4.3 is the behavior authority; the Go candidate above is the
+Python dateparser 1.4.3 is the behavior authority; the Go release above is the
 immediate porting reference, checked through unchanged v1.4.5 fixtures plus the
 separate verified corrections. The independent [Python fixture](testdata/python-features.json)
 records package versions and imported source hashes. Python exception inputs
