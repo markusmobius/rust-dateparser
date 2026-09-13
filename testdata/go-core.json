@@ -1,16 +1,16 @@
 {
   "reference": {
     "module": "github.com/markusmobius/go-dateparser",
-    "version": "v1.4.4",
-    "commit": "577619dabf1814609ac9e3010b34e4dc6b213694",
-    "module_sum": "h1:79+zZ9o3OAo4x7BHlSLhq7u8BD7qBr7kbwb6ilHZVgg=",
+    "version": "v1.4.5",
+    "commit": "e02a0cfd80decdd47412d773b4799a89af078409",
+    "module_sum": "h1:Y34+feJSV/d7QGMbLFlQSfdPDVdhQS5qVL8/sHJ9eKk=",
     "go_version": "go1.27.1",
     "text_version": "v0.42.0",
     "timezone_source_sha256": "196f4114f49977ebfe4ba6f7f6fc052bb5cf319bf5834594a5a1693fd3a213a3",
     "license_sha256": "6c6a5f897960bf47bdc044cecf8d1b3fb484348020fa8a0320f3bf73d6d3cf3b",
     "python_license_sha256": "8639063668407f5e478ae2d3c3c17966088558b4b5574b548c436eea302bbe7e",
     "project_license_sha256": "cc496b95300df22f01ac90ca4d06bdcbed26f3079b45b07eefa323226c20111d",
-    "locale_data_sha256": "a59304a944a0129954709dc4901d3c455877c004081487dfb68c4362c0440fe7",
+    "locale_data_sha256": "2b26f3670876c60c0976255203466a640540b747d65d81d5a1c95c80edc0f1ff",
     "language_tests_sha256": "884701972d0ddeed2d4d3530a63374e8e67693076ed8842be536ffff371d303d",
     "parser_tests_sha256": "62978aa34068ac5a4693f6eb8b64affd464cf23de1d826d574858b4fc97339ec",
     "wall_year": 2026

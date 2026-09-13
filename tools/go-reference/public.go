@@ -25,6 +25,8 @@ func (cfg configuration) public() *dps.Configuration {
 		PreferredDateSource: dps.PreferredDateSource(cfg.PreferredDateSource), StrictParsing: cfg.StrictParsing,
 		RequiredParts: cfg.RequiredParts, ReturnTimeAsPeriod: cfg.ReturnTimeAsPeriod, PreserveEndOfMonth: cfg.PreserveEndOfMonth,
 		IgnoreSurroundingText: cfg.IgnoreSurroundingText,
+		SearchStrategy:        cfg.SearchStrategy, ReturnTimeSpan: cfg.ReturnTimeSpan,
+		DefaultStartOfWeek: cfg.DefaultStartOfWeek, DefaultDaysInMonth: cfg.DefaultDaysInMonth,
 	}
 	if cfg.DateOrderIsExplicit {
 		result.DateOrder = func(string) string { return cfg.DateOrder }

@@ -1,12 +1,15 @@
 package main
 
 import (
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/markusmobius/go-dateparser/date"
@@ -41,6 +44,10 @@ type configuration struct {
 	RequiredParts         []string          `json:"required_parts,omitempty"`
 	ReturnTimeAsPeriod    bool              `json:"return_time_as_period,omitempty"`
 	PreserveEndOfMonth    bool              `json:"preserve_end_of_month,omitempty"`
+	SearchStrategy        string            `json:"search_strategy,omitempty"`
+	ReturnTimeSpan        bool              `json:"return_time_span,omitempty"`
+	DefaultStartOfWeek    string            `json:"default_start_of_week,omitempty"`
+	DefaultDaysInMonth    int               `json:"default_days_in_month,omitempty"`
 }
 
 func (cfg configuration) internal() *setting.Configuration {
@@ -111,6 +118,7 @@ type reference struct {
 	Version              string `json:"version"`
 	Commit               string `json:"commit"`
 	ModuleSum            string `json:"module_sum"`
+	SourceSHA256         string `json:"source_sha256,omitempty"`
 	GoVersion            string `json:"go_version"`
 	TextVersion          string `json:"text_version"`
 	TimezoneSourceSHA256 string `json:"timezone_source_sha256"`
@@ -138,39 +146,83 @@ func pinnedReference(version string) reference {
 	case "v1.4.4":
 		commit = "577619dabf1814609ac9e3010b34e4dc6b213694"
 		moduleSum = "h1:79+zZ9o3OAo4x7BHlSLhq7u8BD7qBr7kbwb6ilHZVgg="
+	case "v1.4.5":
+		commit = "e02a0cfd80decdd47412d773b4799a89af078409"
+		moduleSum = "h1:Y34+feJSV/d7QGMbLFlQSfdPDVdhQS5qVL8/sHJ9eKk="
 	default:
 		panic("unsupported Go-DateParser reference version")
 	}
 	return reference{Module: "github.com/markusmobius/go-dateparser", Version: version, Commit: commit, ModuleSum: moduleSum}
 }
 
+var benchmarkReleaseCommit, benchmarkReleaseModuleSum string
+
+func benchmarkReleaseReference() reference {
+	commit, commitErr := hex.DecodeString(benchmarkReleaseCommit)
+	checksum, checksumErr := base64.StdEncoding.DecodeString(strings.TrimPrefix(benchmarkReleaseModuleSum, "h1:"))
+	if commitErr != nil || len(commit) != 20 || checksumErr != nil || len(checksum) != 32 || !strings.HasPrefix(benchmarkReleaseModuleSum, "h1:") {
+		panic("release benchmark provenance must be verified and embedded by tools/benchmark.py")
+	}
+	return reference{
+		Module: "github.com/markusmobius/go-dateparser", Version: "v1.4.5",
+		Commit: benchmarkReleaseCommit, ModuleSum: benchmarkReleaseModuleSum,
+	}
+}
+
 func main() {
 	output := flag.String("output", "../../testdata/go-core.json", "Go-derived fixture destination")
+	featuresOutput := flag.String("features-output", "", "export supplementary search and calendar fixtures without changing parsing data")
 	benchmark := flag.String("benchmark", "", "benchmark an existing Go fixture without regenerating it")
-	benchmarkVersion := flag.String("benchmark-version", "", "benchmark-only Go version: v1.4.3 or v1.4.4")
+	benchmarkVersion := flag.String("benchmark-version", "", "benchmark-only Go version: v1.4.3, v1.4.4, or verified v1.4.5")
+	benchmarkFeatures := flag.Bool("benchmark-features", false, "benchmark the Python-qualified search and calendar fixture")
+	benchmarkSource := flag.String("benchmark-source", "", "feature-benchmark-only local Go source matching a temporary module replacement")
+	iterations := flag.Int("iterations", 16, "feature corpus repetitions per measured pass")
 	cohort := flag.String("cohort", "auto", "benchmark cohort: auto, explicit, or htmldate")
 	passes := flag.Int("passes", 8, "measured benchmark passes after the first validated pass")
 	flag.Parse()
+	if *benchmarkFeatures && *benchmark == "" {
+		panic("benchmark-features requires benchmark mode")
+	}
+	if *benchmarkSource != "" {
+		if !*benchmarkFeatures || *benchmark == "" || *benchmarkVersion != "" || *featuresOutput != "" {
+			panic("benchmark-source is only allowed for feature benchmarks")
+		}
+		absolute, err := filepath.Abs(*benchmarkSource)
+		if err != nil {
+			panic(err)
+		}
+		*benchmarkSource = absolute
+	}
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
 		panic("Go build provenance is unavailable")
 	}
-	provenance := pinnedReference("v1.4.4")
+	provenance := pinnedReference("v1.4.5")
 	if *benchmarkVersion != "" {
 		if *benchmark == "" {
 			panic("benchmark-version requires benchmark mode")
 		}
-		provenance = pinnedReference(*benchmarkVersion)
+		if *benchmarkVersion == "v1.4.5" {
+			provenance = benchmarkReleaseReference()
+		} else {
+			provenance = pinnedReference(*benchmarkVersion)
+		}
 	}
 	expectedModuleSum := provenance.ModuleSum
 	provenance.ModuleSum = ""
 	provenance.GoVersion = info.GoVersion
 	for _, dependency := range info.Deps {
 		if dependency.Path == provenance.Module {
-			if dependency.Version != provenance.Version || dependency.Sum != expectedModuleSum || dependency.Replace != nil {
+			if *benchmarkSource != "" {
+				if dependency.Version != provenance.Version || dependency.Replace == nil || filepath.Clean(dependency.Replace.Path) != *benchmarkSource {
+					panic("feature benchmark source does not match its temporary module replacement")
+				}
+				provenance.ModuleSum = expectedModuleSum
+			} else if dependency.Version != provenance.Version || dependency.Sum != expectedModuleSum || dependency.Replace != nil {
 				panic("unexpected Go-DateParser reference dependency")
+			} else {
+				provenance.ModuleSum = dependency.Sum
 			}
-			provenance.ModuleSum = dependency.Sum
 		}
 		if dependency.Path == "golang.org/x/text" {
 			if dependency.Version != "v0.42.0" || dependency.Replace != nil {
@@ -184,7 +236,18 @@ func main() {
 	}
 	provenance.WallYear = time.Now().Year()
 	if *benchmark != "" {
-		runBenchmark(*benchmark, *cohort, *passes, provenance)
+		if *benchmarkSource != "" {
+			provenance = benchmarkSourceReference(provenance)
+		}
+		if *benchmarkFeatures {
+			runFeatureBenchmark(*benchmark, *cohort, *passes, *iterations, provenance)
+		} else {
+			runBenchmark(*benchmark, *cohort, *passes, provenance)
+		}
+		return
+	}
+	if *featuresOutput != "" {
+		exportFeatures(*featuresOutput, provenance)
 		return
 	}
 	translations, public := exportData(&provenance)

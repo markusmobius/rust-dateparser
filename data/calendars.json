@@ -1,0 +1,337 @@
+{
+  "jalali_days": [
+    {
+      "replacement": "31",
+      "aliases": [
+        "سی و یک"
+      ]
+    },
+    {
+      "replacement": "13",
+      "aliases": [
+        "سیزده"
+      ]
+    },
+    {
+      "replacement": "29",
+      "aliases": [
+        "بیست و نه"
+      ]
+    },
+    {
+      "replacement": "28",
+      "aliases": [
+        "بیست و هشت"
+      ]
+    },
+    {
+      "replacement": "27",
+      "aliases": [
+        "بیست و هفت"
+      ]
+    },
+    {
+      "replacement": "26",
+      "aliases": [
+        "بیست و شش"
+      ]
+    },
+    {
+      "replacement": "25",
+      "aliases": [
+        "بیست و پنج"
+      ]
+    },
+    {
+      "replacement": "24",
+      "aliases": [
+        "بیست و چهار"
+      ]
+    },
+    {
+      "replacement": "23",
+      "aliases": [
+        "بیست و سه",
+        "بیست و سو"
+      ]
+    },
+    {
+      "replacement": "22",
+      "aliases": [
+        "بیست و دو",
+        "بیست ثانیه"
+      ]
+    },
+    {
+      "replacement": "21",
+      "aliases": [
+        "بیست و یک"
+      ]
+    },
+    {
+      "replacement": "20",
+      "aliases": [
+        "بیست"
+      ]
+    },
+    {
+      "replacement": "19",
+      "aliases": [
+        "نوزده"
+      ]
+    },
+    {
+      "replacement": "18",
+      "aliases": [
+        "هجده"
+      ]
+    },
+    {
+      "replacement": "17",
+      "aliases": [
+        "هفده"
+      ]
+    },
+    {
+      "replacement": "16",
+      "aliases": [
+        "شانزده"
+      ]
+    },
+    {
+      "replacement": "15",
+      "aliases": [
+        "پانزده"
+      ]
+    },
+    {
+      "replacement": "14",
+      "aliases": [
+        "چهارده"
+      ]
+    },
+    {
+      "replacement": "30",
+      "aliases": [
+        "سی"
+      ]
+    },
+    {
+      "replacement": "12",
+      "aliases": [
+        "دوازده"
+      ]
+    },
+    {
+      "replacement": "11",
+      "aliases": [
+        "یازده"
+      ]
+    },
+    {
+      "replacement": "10",
+      "aliases": [
+        "ده"
+      ]
+    },
+    {
+      "replacement": "9",
+      "aliases": [
+        "نه"
+      ]
+    },
+    {
+      "replacement": "8",
+      "aliases": [
+        "هشت"
+      ]
+    },
+    {
+      "replacement": "7",
+      "aliases": [
+        "هفت"
+      ]
+    },
+    {
+      "replacement": "6",
+      "aliases": [
+        "شش"
+      ]
+    },
+    {
+      "replacement": "5",
+      "aliases": [
+        "پنج"
+      ]
+    },
+    {
+      "replacement": "4",
+      "aliases": [
+        "چهار"
+      ]
+    },
+    {
+      "replacement": "3",
+      "aliases": [
+        "سه",
+        "سو"
+      ]
+    },
+    {
+      "replacement": "2",
+      "aliases": [
+        "دو"
+      ]
+    },
+    {
+      "replacement": "1",
+      "aliases": [
+        "یک",
+        "اول"
+      ]
+    },
+    {
+      "replacement": "0",
+      "aliases": [
+        "صفر"
+      ]
+    }
+  ],
+  "jalali_months": [
+    {
+      "replacement": "Farvardin",
+      "aliases": [
+        "فروردین"
+      ]
+    },
+    {
+      "replacement": "Ordibehesht",
+      "aliases": [
+        "اردیبهشت"
+      ]
+    },
+    {
+      "replacement": "Khordad",
+      "aliases": [
+        "خرداد"
+      ]
+    },
+    {
+      "replacement": "Tir",
+      "aliases": [
+        "تیر"
+      ]
+    },
+    {
+      "replacement": "Mordad",
+      "aliases": [
+        "امرداد",
+        "مرداد"
+      ]
+    },
+    {
+      "replacement": "Shahrivar",
+      "aliases": [
+        "شهریور",
+        "شهريور"
+      ]
+    },
+    {
+      "replacement": "Mehr",
+      "aliases": [
+        "مهر"
+      ]
+    },
+    {
+      "replacement": "Aban",
+      "aliases": [
+        "ابان"
+      ]
+    },
+    {
+      "replacement": "Azar",
+      "aliases": [
+        "اذر"
+      ]
+    },
+    {
+      "replacement": "Dey",
+      "aliases": [
+        "دی"
+      ]
+    },
+    {
+      "replacement": "Bahman",
+      "aliases": [
+        "بهمن",
+        "بهن"
+      ]
+    },
+    {
+      "replacement": "Esfand",
+      "aliases": [
+        "اسفند"
+      ]
+    }
+  ],
+  "jalali_patterns": {
+    "rxColonPattern": "(?:[\\t\\n\\f\\r ])+و(?:[\\t\\n\\f\\r ])+",
+    "rxHourPattern": "ساعت(?:[\\t\\n\\f\\r ])+(?:[0-9]){2,2}",
+    "rxMinutePattern": "(?:[0-9]){2,2}(?:[\\t\\n\\f\\r ])+دقیقه",
+    "rxNonDigit": "[^0-9]",
+    "rxOrdinalPattern": "(?:ام|م|ین)",
+    "rxSecondPattern": "(?:[0-9]){2,2}(?:[\\t\\n\\f\\r ])+ثانیه"
+  },
+  "jalali_weekdays": [
+    {
+      "replacement": "IekShanbe",
+      "aliases": [
+        "یکشنبه"
+      ]
+    },
+    {
+      "replacement": "DoShanbe",
+      "aliases": [
+        "دوشنبه"
+      ]
+    },
+    {
+      "replacement": "SeShanbe",
+      "aliases": [
+        "سهشنبه",
+        "سه شنبه"
+      ]
+    },
+    {
+      "replacement": "ChaharShanbe",
+      "aliases": [
+        "چهارشنبه",
+        "چهار شنبه"
+      ]
+    },
+    {
+      "replacement": "PanjShanbe",
+      "aliases": [
+        "پنجشنبه",
+        "پنج شنبه"
+      ]
+    },
+    {
+      "replacement": "Jome",
+      "aliases": [
+        "جمعه"
+      ]
+    },
+    {
+      "replacement": "Shanbe",
+      "aliases": [
+        "روز شنبه",
+        "شنبه"
+      ]
+    }
+  ],
+  "source_sha256": {
+    "github.com/markusmobius/go-dateparser/internal/parser/calendars/data.json": "ad31d61fb903d5f2f5d22a38df22e6cba6c3dcf7322d6f325a27df417ebfc2e2",
+    "github.com/markusmobius/go-dateparser/internal/parser/jalali/translate.go": "40b3fb615fd708fb06276eda3d6f844868b1030071aebfd549c6d69c82db6d9b"
+  }
+}

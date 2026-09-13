@@ -88,6 +88,10 @@ struct Settings {
     required_parts: Vec<String>,
     return_time_as_period: bool,
     preserve_end_of_month: bool,
+    search_strategy: String,
+    return_time_span: bool,
+    default_start_of_week: String,
+    default_days_in_month: i32,
 }
 
 impl Settings {
@@ -163,7 +167,10 @@ impl Settings {
             required_parts: self.required_parts.clone(),
             return_time_as_period: self.return_time_as_period,
             preserve_end_of_month: self.preserve_end_of_month,
-            ..Configuration::default()
+            search_strategy: self.search_strategy.clone(),
+            return_time_span: self.return_time_span,
+            default_start_of_week: self.default_start_of_week.clone(),
+            default_days_in_month: self.default_days_in_month,
         }
     }
 }
@@ -208,16 +215,448 @@ fn result(date: Option<Date>, timestamp: bool) -> Expected {
     }
 }
 
+#[derive(Debug, Deserialize, Eq, PartialEq)]
+struct FeatureMatch {
+    text: String,
+    date: Expected,
+}
+
+#[derive(Debug, Deserialize)]
+struct FeatureCase {
+    id: String,
+    stage: String,
+    input: String,
+    #[serde(default)]
+    reference_input: String,
+    #[serde(default)]
+    language: String,
+    configuration: Settings,
+    #[serde(default)]
+    unspecified_current_time: bool,
+    #[serde(default)]
+    parser_types: Vec<u8>,
+    #[serde(default)]
+    error: String,
+    #[serde(default)]
+    detected: String,
+    detector_languages: Option<Vec<String>>,
+    #[serde(default)]
+    detection_inputs: Vec<String>,
+    #[serde(default)]
+    date_order_inputs: Vec<String>,
+    #[serde(default)]
+    upstream_panic: String,
+    #[serde(default)]
+    known_difference: String,
+    matches: Vec<FeatureMatch>,
+    #[serde(default)]
+    translations: Vec<String>,
+    #[serde(default)]
+    originals: Vec<String>,
+}
+
+#[derive(Deserialize)]
+struct PythonReference {
+    module: String,
+    commit: String,
+    versions: std::collections::HashMap<String, String>,
+}
+
+#[derive(Deserialize)]
+struct PythonFixture {
+    reference: PythonReference,
+    calendar_data_sha256: String,
+    cases: Vec<FeatureCase>,
+}
+
+fn run_feature(
+    case: &FeatureCase,
+    configuration: &Configuration,
+    parser: &crate::Parser,
+) -> Result<(String, Vec<crate::SearchResult>), crate::Error> {
+    match case.stage.as_str() {
+        "jalali" | "hijri" => {
+            let parse = if case.stage == "jalali" {
+                crate::parse_jalali
+            } else {
+                crate::parse_hijri
+            };
+            parse(configuration, &case.input).map(|date| {
+                (
+                    String::new(),
+                    vec![crate::SearchResult {
+                        text: case.input.clone(),
+                        date,
+                    }],
+                )
+            })
+        }
+        "search" => parser.search(configuration, &case.input),
+        "search_with_language" => parser
+            .search_with_language(configuration, &case.language, &case.input)
+            .map(|found| (case.language.clone(), found)),
+        other => panic!("unknown feature stage {other}"),
+    }
+}
+
+fn verify_python_features(bytes: &[u8], calendars: bool) {
+    let fixture: PythonFixture = serde_json::from_slice(bytes).unwrap();
+    assert_eq!(
+        fixture.reference.module,
+        "https://github.com/scrapinghub/dateparser"
+    );
+    assert_eq!(
+        fixture.reference.commit,
+        "9ce60b1958f1b285886bcfbb743f6419feacfc92"
+    );
+    for (package, version) in [
+        ("dateparser", "1.4.3"),
+        ("convertdate", "2.4.1"),
+        ("hijridate", "2.6.0"),
+        ("pymeeus", "0.5.12"),
+    ] {
+        assert_eq!(fixture.reference.versions[package], version);
+    }
+    assert_eq!(
+        fixture.calendar_data_sha256,
+        format!(
+            "{:x}",
+            Sha256::digest(include_bytes!("../data/calendar-conversions.json"))
+        )
+    );
+    let mut checked = 0;
+    let mut safety = 0;
+    let mut failures = Vec::new();
+    for mut case in fixture.cases {
+        if matches!(case.stage.as_str(), "jalali" | "hijri") != calendars {
+            continue;
+        }
+        case.configuration.date_order_is_explicit = !case.configuration.date_order.is_empty();
+        let configuration = case.configuration.configuration();
+        let detection_inputs = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let mut parser = crate::Parser::new();
+        if let Some(languages) = &case.detector_languages {
+            let languages = languages.clone();
+            let inputs = detection_inputs.clone();
+            parser.detect_languages_function = Some(std::sync::Arc::new(move |input| {
+                inputs.lock().unwrap().push(input.to_string());
+                languages.clone()
+            }));
+        }
+        let actual = run_feature(&case, &configuration, &parser);
+        let (detected, matches, error) = match actual {
+            Ok((detected, matches)) => (detected, matches, String::new()),
+            Err(error) => (String::new(), Vec::new(), error.to_string()),
+        };
+        if !case.known_difference.is_empty() {
+            assert!(!calendars);
+            match case.known_difference.as_str() {
+                "python-search-exception" => (),
+                "python-relative-range" => {
+                    assert!(matches.is_empty(), "{} must reject overflow", case.id)
+                }
+                other => panic!("unreviewed Python difference {other}"),
+            }
+            safety += 1;
+            continue;
+        }
+        let matches: Vec<_> = matches
+            .into_iter()
+            .map(|matched| {
+                let mut date = result(Some(matched.date), false);
+                if !calendars {
+                    date.locale.clear();
+                    date.period.clear();
+                    date.timezone.clear();
+                } else if case
+                    .matches
+                    .first()
+                    .is_some_and(|expected| expected.date.period == "Time")
+                {
+                    assert!(matches!(date.period.as_str(), "Hour" | "Minute" | "Second"));
+                    date.period = "Time".into();
+                }
+                FeatureMatch {
+                    text: matched.text,
+                    date,
+                }
+            })
+            .collect();
+        if matches != case.matches
+            || (calendars && error.is_empty() != case.error.is_empty())
+            || (!calendars && !matches.is_empty() && detected != case.detected)
+            || *detection_inputs.lock().unwrap() != case.detection_inputs
+        {
+            failures.push(format!(
+                "{} {:?}: {:?} / {:?}; language {:?}/{:?}; error {:?}/{:?}; callbacks {:?}/{:?}",
+                case.id,
+                case.input,
+                matches,
+                case.matches,
+                detected,
+                case.detected,
+                error,
+                case.error,
+                detection_inputs.lock().unwrap(),
+                case.detection_inputs
+            ));
+        }
+        checked += 1;
+    }
+    assert_eq!(checked, if calendars { 7504 } else { 178 });
+    assert_eq!(safety, if calendars { 0 } else { 10 });
+    assert!(
+        failures.is_empty(),
+        "{} of {checked} Python feature cases differed:\n{}",
+        failures.len(),
+        failures
+            .iter()
+            .take(20)
+            .cloned()
+            .collect::<Vec<_>>()
+            .join("\n")
+    );
+    eprintln!("Matched {checked} Python cases; {safety} exception inputs checked for safety");
+}
+
+#[test]
+fn python_calendar_fixture() {
+    verify_python_features(include_bytes!("../testdata/python-features.json"), true);
+}
+
+#[test]
+fn python_search_fixture() {
+    verify_python_features(include_bytes!("../testdata/python-features.json"), false);
+}
+
+fn verify_features(bytes: &[u8]) {
+    #[derive(Deserialize)]
+    struct FeatureFixture {
+        reference: Reference,
+        calendar_data_sha256: String,
+        cases: Vec<FeatureCase>,
+    }
+    let fixture: FeatureFixture = serde_json::from_slice(bytes).unwrap();
+    assert_eq!(fixture.reference.version, "v1.4.5");
+    assert_eq!(
+        fixture.reference.commit,
+        "e02a0cfd80decdd47412d773b4799a89af078409"
+    );
+    assert_eq!(
+        fixture.reference.module_sum,
+        "h1:Y34+feJSV/d7QGMbLFlQSfdPDVdhQS5qVL8/sHJ9eKk="
+    );
+    assert_eq!(
+        fixture.reference.project_license_sha256,
+        format!("{:x}", Sha256::digest(include_bytes!("../LICENSE")))
+    );
+    assert_eq!(
+        fixture.reference.locale_data_sha256,
+        format!(
+            "{:x}",
+            Sha256::digest(include_bytes!("../data/locales.json"))
+        )
+    );
+    assert_eq!(
+        fixture.calendar_data_sha256,
+        format!(
+            "{:x}",
+            Sha256::digest(include_bytes!("../data/calendars.json"))
+        )
+    );
+    let mut checked = 0;
+    let mut upstream_panics = 0;
+    let mut failures = Vec::new();
+    for case in fixture.cases {
+        assert!(
+            case.known_difference.is_empty(),
+            "{} must match Go exactly",
+            case.id
+        );
+        assert!(
+            case.reference_input.is_empty(),
+            "{} must use its original input",
+            case.id
+        );
+        let mut configuration = case.configuration.configuration();
+        if case.unspecified_current_time {
+            configuration.current_time = None;
+        }
+        if case.stage == "translation" {
+            let (translations, originals) = crate::language::translate_search(
+                &configuration.initialized().unwrap(),
+                crate::locale::data().get(&case.language).unwrap(),
+                &case.input,
+            );
+            if case.upstream_panic.is_empty()
+                && (translations != case.translations || originals != case.originals)
+            {
+                failures.push(format!(
+                    "{} {} {:?}: translation {:?} / {:?}; originals {:?} / {:?}",
+                    case.id,
+                    case.language,
+                    case.input,
+                    translations,
+                    case.translations,
+                    originals,
+                    case.originals
+                ));
+            }
+        } else {
+            let mut parser = crate::Parser::new();
+            parser.parser_types = case
+                .parser_types
+                .iter()
+                .map(|kind| match kind {
+                    0 => crate::ParserType::Timestamp,
+                    1 => crate::ParserType::NegativeTimestamp,
+                    2 => crate::ParserType::RelativeTime,
+                    3 => crate::ParserType::CustomFormat,
+                    4 => crate::ParserType::AbsoluteTime,
+                    5 => crate::ParserType::NoSpacesTime,
+                    _ => panic!("unexpected parser kind"),
+                })
+                .collect();
+            let detection_inputs = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+            let date_order_inputs =
+                std::sync::Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
+            if matches!(case.stage.as_str(), "jalali" | "hijri")
+                && (configuration.date_order.is_some()
+                    || configuration.date_order_for_locale.is_some())
+            {
+                let resolve = configuration.date_order_for_locale.clone();
+                let order = configuration.date_order;
+                let inputs = date_order_inputs.clone();
+                configuration.date_order_for_locale =
+                    Some(crate::DateOrderResolver::new(move |locale| {
+                        inputs.lock().unwrap().push(locale.into());
+                        resolve
+                            .as_ref()
+                            .map_or(order, |resolve| resolve.resolve(locale))
+                    }));
+            }
+            if let Some(detected) = &case.detector_languages {
+                let detected = detected.clone();
+                let inputs = detection_inputs.clone();
+                parser.detect_languages_function = Some(std::sync::Arc::new(move |input| {
+                    inputs.lock().unwrap().push(input.to_string());
+                    detected.clone()
+                }));
+            }
+            let actual = if case.stage == "search" {
+                parser.search(&configuration, &case.input)
+            } else if case.stage == "jalali" || case.stage == "hijri" {
+                let parse = if case.stage == "jalali" {
+                    crate::parse_jalali
+                } else {
+                    crate::parse_hijri
+                };
+                parse(&configuration, &case.input).map(|date| {
+                    let matches = if date.is_zero() {
+                        Vec::new()
+                    } else {
+                        vec![crate::SearchResult {
+                            text: case.input.clone(),
+                            date,
+                        }]
+                    };
+                    (String::new(), matches)
+                })
+            } else {
+                parser
+                    .search_with_language(&configuration, &case.language, &case.input)
+                    .map(|found| (String::new(), found))
+            };
+            if case.upstream_panic.is_empty() {
+                let (detected, matches, error) = match actual {
+                    Ok((detected, matches)) => (detected, matches, String::new()),
+                    Err(error) => (String::new(), Vec::new(), error.to_string()),
+                };
+                if error != case.error
+                    || (error.is_empty() && detected != case.detected)
+                    || *detection_inputs.lock().unwrap() != case.detection_inputs
+                {
+                    failures.push(format!(
+                        "{} {} {:?}: error {:?}/{:?}, language {:?}/{:?}, detector {:?}/{:?}",
+                        case.id,
+                        case.language,
+                        case.input,
+                        error,
+                        case.error,
+                        detected,
+                        case.detected,
+                        detection_inputs.lock().unwrap(),
+                        case.detection_inputs
+                    ));
+                }
+                if *date_order_inputs.lock().unwrap() != case.date_order_inputs {
+                    failures.push(format!(
+                        "{}: date-order callback {:?}/{:?}",
+                        case.id,
+                        date_order_inputs.lock().unwrap(),
+                        case.date_order_inputs
+                    ));
+                }
+                let matches: Vec<_> = matches
+                    .into_iter()
+                    .map(|matched| FeatureMatch {
+                        text: matched.text,
+                        date: {
+                            let local = matches!(matched.date.time.timezone(), Timezone::Local);
+                            result(Some(matched.date), local)
+                        },
+                    })
+                    .collect();
+                if matches != case.matches {
+                    failures.push(format!(
+                        "{} {} {:?}: matches {:?} / {:?}",
+                        case.id, case.language, case.input, matches, case.matches
+                    ));
+                }
+            } else if case.stage == "hijri" {
+                assert_eq!(
+                    actual.unwrap_err().to_string(),
+                    "date is outside Umm al-Qura scope",
+                    "{}",
+                    case.id
+                );
+            }
+        }
+        if !case.upstream_panic.is_empty() {
+            upstream_panics += 1;
+        } else {
+            checked += 1;
+        }
+    }
+    assert_eq!(checked, 9_886);
+    assert!(
+        failures.is_empty(),
+        "{} feature differences:\n{}",
+        failures.len(),
+        failures.join("\n")
+    );
+    assert_eq!(
+        upstream_panics, 0,
+        "the Go v1.4.5 fixture must not mask panics"
+    );
+    eprintln!("Matched {checked} supplementary Go v1.4.5 cases exactly, with no exceptions or panic inputs");
+}
+
+#[test]
+fn go_feature_fixture() {
+    verify_features(include_bytes!("../testdata/go-features.json"));
+}
+
 fn verify(bytes: &[u8]) {
     let fixture: Fixture = serde_json::from_slice(bytes).unwrap();
     assert_eq!(
         fixture.reference.module,
         "github.com/markusmobius/go-dateparser"
     );
-    assert_eq!(fixture.reference.version, "v1.4.4");
+    assert_eq!(fixture.reference.version, "v1.4.5");
     assert_eq!(
         fixture.reference.commit,
-        "577619dabf1814609ac9e3010b34e4dc6b213694"
+        "e02a0cfd80decdd47412d773b4799a89af078409"
     );
     assert_eq!(fixture.reference.go_version, "go1.27.1");
     assert_eq!(fixture.reference.text_version, "v0.42.0");
@@ -246,7 +685,7 @@ fn verify(bytes: &[u8]) {
     );
     assert_eq!(
         fixture.reference.module_sum,
-        "h1:79+zZ9o3OAo4x7BHlSLhq7u8BD7qBr7kbwb6ilHZVgg="
+        "h1:Y34+feJSV/d7QGMbLFlQSfdPDVdhQS5qVL8/sHJ9eKk="
     );
     assert_eq!(
         fixture
@@ -400,15 +839,13 @@ fn verify_languages(bytes: &[u8]) {
             .filter(|token| case.locale != "fi" || *token != "t")
             .collect();
         let normalized = crate::text::normalize(&case.input);
-        let simplified = crate::language::simplify(
-            locale,
-            &crate::text::normalize_digits(
-                &crate::text::normalize_unicode(&case.input)
-                    .chars()
-                    .flat_map(char::to_lowercase)
-                    .collect::<String>(),
-            ),
+        let translation_input = crate::text::normalize_digits(
+            &crate::text::normalize_unicode(&case.input)
+                .chars()
+                .flat_map(char::to_lowercase)
+                .collect::<String>(),
         );
+        let simplified = crate::language::simplify(locale, &translation_input);
         let tokens = crate::language::split(locale, &simplified, case.keep_formatting, &skipped);
         let applicable = crate::language::applicable(
             &configuration,
@@ -468,6 +905,20 @@ fn live_go_parity() {
 }
 
 #[test]
+#[ignore = "generate a fresh supplementary snapshot with tools/go-reference first"]
+fn live_go_feature_parity() {
+    let path = std::env::var_os("GO_DATEPARSER_FEATURE_REFERENCE")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| "target/go-features-reference.json".into());
+    let bytes = std::fs::read(path).expect("fresh Go feature reference file is missing");
+    assert!(
+        bytes == include_bytes!("../testdata/go-features.json"),
+        "supplementary fixture did not reproduce byte-for-byte"
+    );
+    verify_features(&bytes);
+}
+
+#[test]
 #[ignore = "run tools/benchmark.py for isolated single-thread measurements"]
 fn benchmark_public_parse() {
     use chrono::Datelike;
@@ -477,7 +928,7 @@ fn benchmark_public_parse() {
         .unwrap_or_else(|_| "testdata/go-core.json".into());
     let bytes = std::fs::read(path).unwrap();
     let fixture: Fixture = serde_json::from_slice(&bytes).unwrap();
-    assert_eq!(fixture.reference.version, "v1.4.4");
+    assert_eq!(fixture.reference.version, "v1.4.5");
     assert_eq!(
         fixture.reference.wall_year,
         chrono::Local::now().year(),
@@ -574,6 +1025,139 @@ fn benchmark_public_parse() {
         }
         pass_ms.push(start.elapsed().as_secs_f64() * 1000.0);
         assert_eq!(parsed_count, expected_parsed);
+    }
+    println!(
+        "BENCHMARK_RESULT {}",
+        serde_json::json!({ "metadata": metadata, "pass_ms": pass_ms })
+    );
+}
+
+#[test]
+#[ignore = "run tools/benchmark.py --features for isolated single-thread measurements"]
+fn benchmark_features() {
+    use std::{hint::black_box, time::Instant};
+
+    let path = std::env::var("DATEPARSER_BENCHMARK_SUITE")
+        .unwrap_or_else(|_| "testdata/python-features.json".into());
+    let bytes = std::fs::read(path).unwrap();
+    let fixture: PythonFixture = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(fixture.reference.versions["dateparser"], "1.4.3");
+    let cohort =
+        std::env::var("DATEPARSER_BENCHMARK_COHORT").unwrap_or_else(|_| "search-auto".into());
+    assert!([
+        "search-auto",
+        "search-split",
+        "search-ngram",
+        "time-span",
+        "jalali",
+        "hijri"
+    ]
+    .contains(&cohort.as_str()));
+    let number = |name: &str, default: &str| -> usize {
+        std::env::var(name)
+            .unwrap_or_else(|_| default.into())
+            .parse()
+            .unwrap()
+    };
+    let passes = number("DATEPARSER_BENCHMARK_PASSES", "8");
+    let iterations = number("DATEPARSER_BENCHMARK_ITERATIONS", "16");
+    assert!(passes > 0 && iterations > 0);
+    let prepared: Vec<_> = fixture
+        .cases
+        .into_iter()
+        .filter_map(|mut case| {
+            if !case.known_difference.is_empty() || case.detector_languages.is_some() {
+                return None;
+            }
+            let selected = if matches!(case.stage.as_str(), "jalali" | "hijri") {
+                case.stage.as_str()
+            } else if case.configuration.return_time_span {
+                "time-span"
+            } else if case.configuration.search_strategy == "ngram" {
+                "search-ngram"
+            } else if case.stage == "search"
+                && case.configuration.languages.is_empty()
+                && case.configuration.locales.is_empty()
+            {
+                "search-auto"
+            } else {
+                "search-split"
+            };
+            if selected != cohort {
+                return None;
+            }
+            case.configuration.date_order_is_explicit = !case.configuration.date_order.is_empty();
+            let configuration = case.configuration.configuration();
+            Some((case, configuration, crate::Parser::new()))
+        })
+        .collect();
+    assert!(!prepared.is_empty());
+    let expected_parsed = prepared
+        .iter()
+        .filter(|entry| !entry.0.matches.is_empty())
+        .count();
+    let expected_matches: usize = prepared.iter().map(|entry| entry.0.matches.len()).sum();
+    let calendars = matches!(cohort.as_str(), "jalali" | "hijri");
+    let first = Instant::now();
+    for (case, configuration, parser) in &prepared {
+        let actual = run_feature(case, configuration, parser);
+        if calendars {
+            assert_eq!(actual.is_err(), !case.error.is_empty(), "{}", case.id);
+        }
+        let (detected, matches) = actual.unwrap_or_default();
+        if !calendars && !matches.is_empty() {
+            assert_eq!(detected, case.detected, "{}", case.id);
+        }
+        let matches: Vec<_> = matches
+            .into_iter()
+            .map(|matched| {
+                let mut date = result(Some(matched.date), false);
+                if !calendars {
+                    date.locale.clear();
+                    date.period.clear();
+                    date.timezone.clear();
+                } else if case
+                    .matches
+                    .first()
+                    .is_some_and(|expected| expected.date.period == "Time")
+                {
+                    assert!(matches!(date.period.as_str(), "Hour" | "Minute" | "Second"));
+                    date.period = "Time".into();
+                }
+                FeatureMatch {
+                    text: matched.text,
+                    date,
+                }
+            })
+            .collect();
+        assert_eq!(matches, case.matches, "{} {:?}", case.id, case.input);
+    }
+    let metadata = serde_json::json!({
+        "cohort": cohort, "cases": prepared.len(), "parsed": expected_parsed,
+        "matched_dates": expected_matches, "iterations": iterations,
+        "fixture_sha256": format!("{:x}", Sha256::digest(&bytes)),
+        "first_pass_ms": first.elapsed().as_secs_f64() * 1000.0,
+    });
+    println!("BENCHMARK_READY {metadata}");
+    std::io::Write::flush(&mut std::io::stdout()).unwrap();
+    let mut pass_ms = Vec::with_capacity(passes);
+    for _ in 0..passes {
+        let mut parsed_count = 0;
+        let mut match_count = 0;
+        let start = Instant::now();
+        for _ in 0..iterations {
+            for (case, configuration, parser) in &prepared {
+                let parsed = run_feature(black_box(case), configuration, parser);
+                if let Ok((_, matches)) = &parsed {
+                    parsed_count += usize::from(!matches.is_empty());
+                    match_count += matches.len();
+                }
+                let _ = black_box(parsed);
+            }
+        }
+        pass_ms.push(start.elapsed().as_secs_f64() * 1000.0);
+        assert_eq!(parsed_count, expected_parsed * iterations);
+        assert_eq!(match_count, expected_matches * iterations);
     }
     println!(
         "BENCHMARK_RESULT {}",

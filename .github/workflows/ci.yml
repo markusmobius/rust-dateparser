@@ -38,6 +38,13 @@ jobs:
           TZ: UTC
         run: go -C tools/go-reference run -mod=readonly . -output ../../target/go-reference.json
       - if: runner.os == 'Linux'
-        run: cargo test --locked --lib live_go_parity -- --ignored --nocapture
+        env:
+          GOTOOLCHAIN: go1.27.1
+          CGO_ENABLED: '0'
+          GOMAXPROCS: '1'
+          TZ: UTC
+        run: go -C tools/go-reference run -mod=readonly . -features-output ../../target/go-features-reference.json
       - if: runner.os == 'Linux'
-        run: git diff --exit-code -- data/locales.json src/timezone_data.rs LICENSE
+        run: cargo test --locked --lib live_go_ -- --ignored --nocapture
+      - if: runner.os == 'Linux'
+        run: git diff --exit-code -- data/locales.json data/calendars.json data/calendar-conversions.json src/timezone_data.rs LICENSE THIRD_PARTY_NOTICES.md

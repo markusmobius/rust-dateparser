@@ -9,7 +9,7 @@ use crate::tokenizer::{tokenize, Kind, Token};
 use crate::{Configuration, Date, DateOrder, Period, PreferredDateSource, Timezone};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum Part {
+pub(crate) enum Part {
     Day,
     Month,
     Year,
@@ -27,7 +27,57 @@ impl Part {
     }
 }
 
-struct Parser<'configuration> {
+pub(crate) trait Calendar {
+    fn current_date(&self, now: &DateTime<Timezone>) -> Result<[i32; 3], String>;
+    fn number_value(&self, part: Part, text: &str, width: usize) -> Option<i32>;
+    fn letter_value(&self, part: Part, text: &str) -> Option<i32>;
+    fn create_date(
+        &self,
+        configuration: &Configuration,
+        parts: [i32; 3],
+        default_day: bool,
+        clock: NaiveTime,
+        zone: &Timezone,
+    ) -> Result<DateTime<Timezone>, String>;
+}
+
+struct Gregorian;
+
+impl Calendar for Gregorian {
+    fn current_date(&self, now: &DateTime<Timezone>) -> Result<[i32; 3], String> {
+        Ok([now.year(), now.month() as i32, now.day() as i32])
+    }
+
+    fn number_value(&self, part: Part, text: &str, width: usize) -> Option<i32> {
+        number_value(part, text, width)
+    }
+
+    fn letter_value(&self, part: Part, text: &str) -> Option<i32> {
+        letter_value(part, text)
+    }
+
+    fn create_date(
+        &self,
+        configuration: &Configuration,
+        [mut year, month, mut day]: [i32; 3],
+        _default_day: bool,
+        clock: NaiveTime,
+        zone: &Timezone,
+    ) -> Result<DateTime<Timezone>, String> {
+        if day == 29 && month == 2 && !leap_year(year) {
+            year = correct_leap_year(year, configuration.preferred_date_source);
+        }
+        day = day.min(last_day(year, month as u32) as i32);
+        date_time(year, month, day, clock, zone).ok_or_else(calendar_range_error)
+    }
+}
+
+fn calendar_range_error() -> String {
+    "date is outside the supported calendar range".into()
+}
+
+struct Parser<'configuration, CalendarType> {
+    calendar: CalendarType,
     configuration: &'configuration Configuration,
     now: DateTime<Timezone>,
     tokens: Vec<Token>,
@@ -64,9 +114,28 @@ pub(crate) fn parse_with_order(
     date_order: &str,
     explicit_order: bool,
 ) -> Option<Date> {
+    parse_with_calendar(
+        configuration,
+        input,
+        timezone_offset,
+        date_order,
+        explicit_order,
+        Gregorian,
+    )
+    .ok()
+}
+
+pub(crate) fn parse_with_calendar(
+    configuration: &Configuration,
+    input: &str,
+    timezone_offset: Option<i32>,
+    date_order: &str,
+    explicit_order: bool,
+    calendar: impl Calendar,
+) -> Result<Date, String> {
     let input = crate::text::sanitize_spaces(input);
     if input.is_empty() {
-        return None;
+        return Err("string is empty".into());
     }
     let mut tokens = tokenize(&input);
     for token in &mut tokens {
@@ -88,8 +157,12 @@ pub(crate) fn parse_with_order(
         })
         .collect();
     let mut parser = Parser {
+        calendar,
         configuration,
-        now: configuration.current_time.clone()?,
+        now: configuration
+            .current_time
+            .clone()
+            .ok_or_else(calendar_range_error)?,
         tokens,
         filtered,
         order,
@@ -106,8 +179,8 @@ pub(crate) fn parse_with_order(
     parser.finish(timezone_offset)
 }
 
-impl Parser<'_> {
-    fn initialize(&mut self) -> Option<()> {
+impl<CalendarType: Calendar> Parser<'_, CalendarType> {
+    fn initialize(&mut self) -> Result<(), String> {
         for index in 0..self.filtered.len() {
             let (original_index, mut token) = self.filtered[index].clone();
             if self.skipped.contains(&index)
@@ -196,10 +269,11 @@ impl Parser<'_> {
                 continue;
             }
             let results = match token.kind {
-                Kind::Digit => self.parse_digit(&token)?,
-                Kind::Letter => self.parse_letter(&token)?,
+                Kind::Digit => self.parse_digit(&token),
+                Kind::Letter => self.parse_letter(&token),
                 Kind::Other => continue,
-            };
+            }
+            .ok_or_else(|| format!("unable to parse {}", token.text))?;
             for (part, value) in results {
                 if token.text.len() == 4 && part == Part::Year {
                     self.skip_year = true;
@@ -212,12 +286,17 @@ impl Parser<'_> {
                 for token in &self.unset_tokens {
                     if token.kind == Kind::Digit {
                         self.component_tokens[part as usize] = Some(token.clone());
-                        self.values[part as usize] = Some(token.text.parse().ok()?);
+                        self.values[part as usize] = Some(
+                            token
+                                .text
+                                .parse()
+                                .map_err(|_| format!("unable to parse {}", token.text))?,
+                        );
                     }
                 }
             }
         }
-        Some(())
+        Ok(())
     }
 
     fn save(
@@ -257,7 +336,7 @@ impl Parser<'_> {
                 if skip_short_year && width == 2 {
                     continue;
                 }
-                let Some(value) = number_value(part, &token.text, width) else {
+                let Some(value) = self.calendar.number_value(part, &token.text, width) else {
                     continue;
                 };
                 if self.values[part as usize].unwrap_or(0) == 0 {
@@ -265,7 +344,10 @@ impl Parser<'_> {
                 }
                 if let Some(previous) = &self.component_tokens[part as usize] {
                     if previous.kind == Kind::Digit
-                        && number_value(part, &previous.text, width).is_none()
+                        && self
+                            .calendar
+                            .number_value(part, &previous.text, width)
+                            .is_none()
                     {
                         self.unset_tokens.push(previous.clone());
                         return Some(self.save(part, token, value, false));
@@ -294,7 +376,7 @@ impl Parser<'_> {
 
     fn parse_letter(&mut self, token: &Token) -> Option<Vec<(Part, i32)>> {
         for part in [Part::Weekday, Part::Month] {
-            let Some(value) = letter_value(part, &token.text) else {
+            let Some(value) = self.calendar.letter_value(part, &token.text) else {
                 continue;
             };
             let previous = self.values[part as usize].unwrap_or(0);
@@ -316,50 +398,62 @@ impl Parser<'_> {
         None
     }
 
-    fn finish(&self, timezone_offset: Option<i32>) -> Option<Date> {
+    fn finish(&self, timezone_offset: Option<i32>) -> Result<Date, String> {
         let missing: Vec<_> = [Part::Day, Part::Month, Part::Year]
             .into_iter()
             .filter(|part| self.values[*part as usize].is_none())
             .collect();
         if self.configuration.strict_parsing && !missing.is_empty() {
-            return None;
+            return Err(format!(
+                "fields missing from date string: {}",
+                missing
+                    .iter()
+                    .map(|part| part.name())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
         }
-        if self
+        if let Some(required) = self
             .configuration
             .required_parts
             .iter()
-            .any(|required| missing.iter().any(|part| part.name() == required))
+            .find(|required| missing.iter().any(|part| part.name() == *required))
         {
-            return None;
+            return Err(format!("required part \"{required}\" is missing"));
         }
         let (clock, clock_period) = if let Some(token) = &self.time_token {
-            parse_time(token)?
+            parse_time(token).ok_or_else(|| format!("{token} doesn't seem to be a valid time"))?
         } else {
             (NaiveTime::MIN, Period::Day)
         };
-        let mut year = self.values[Part::Year as usize]
+        let [current_year, current_month, current_day] = self.calendar.current_date(&self.now)?;
+        let year = self.values[Part::Year as usize]
             .filter(|year| *year != 0)
-            .unwrap_or(self.now.year());
+            .unwrap_or(current_year);
         let month = self.values[Part::Month as usize]
             .filter(|month| *month != 0)
-            .unwrap_or(self.now.month() as i32);
-        let mut day = self.values[Part::Day as usize]
+            .unwrap_or(current_month);
+        let day = self.values[Part::Day as usize]
             .filter(|day| *day != 0)
-            .unwrap_or(self.now.day() as i32);
-        if day == 29 && month == 2 && !leap_year(year) {
-            year = correct_leap_year(year, self.configuration.preferred_date_source);
-        }
-        day = day.min(last_day(year, month as u32) as i32);
-        let mut value = date_time(year, month, day, clock, &self.now.timezone())?;
-        value = self.correct_time_frame(value, timezone_offset)?;
+            .unwrap_or(current_day);
         let has = |part: Part| self.component_tokens[part as usize].is_some();
+        let mut value = self.calendar.create_date(
+            self.configuration,
+            [year, month, day],
+            !has(Part::Day) && !has(Part::Weekday),
+            clock,
+            &self.now.timezone(),
+        )?;
+        value = self
+            .correct_time_frame(value, timezone_offset)
+            .ok_or_else(calendar_range_error)?;
         let weekday_only =
             has(Part::Weekday) && !has(Part::Year) && !has(Part::Month) && !has(Part::Day);
         if !has(Part::Month) && !weekday_only {
-            value = apply_month(self.configuration, &value)?;
+            value = apply_month(self.configuration, &value).ok_or_else(calendar_range_error)?;
         }
         if !has(Part::Day) && self.time_token.is_none() && !has(Part::Weekday) {
-            value = apply_day(self.configuration, &value)?;
+            value = apply_day(self.configuration, &value).ok_or_else(calendar_range_error)?;
         }
         let mut period = if self.values[Part::Day as usize].is_some() {
             Period::Day
@@ -373,7 +467,7 @@ impl Parser<'_> {
         if self.time_token.is_some() && self.configuration.return_time_as_period {
             period = period.min(clock_period);
         }
-        Some(Date {
+        Ok(Date {
             time: value,
             period,
             locale: String::new(),

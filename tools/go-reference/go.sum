@@ -1,11 +1,5 @@
-github.com/hablullah/go-hijri v1.0.2 h1:drT/MZpSZJQXo7jftf5fthArShcaMtsal0Zf/dnmp6k=
-github.com/hablullah/go-hijri v1.0.2/go.mod h1:OS5qyYLDjORXzK4O1adFw9Q5WfhOcMdAKglDkcTxgWQ=
-github.com/hablullah/go-juliandays v1.0.0 h1:A8YM7wIj16SzlKT0SRJc9CD29iiaUzpBLzh5hr0/5p0=
-github.com/hablullah/go-juliandays v1.0.0/go.mod h1:0JOYq4oFOuDja+oospuc61YoX+uNEn7Z6uHYTbBzdGc=
-github.com/jalaali/go-jalaali v0.1.0 h1:T1duwWUENzyKRH/uixarTCFsmK6maZlN4VaVlfASM5Q=
-github.com/jalaali/go-jalaali v0.1.0/go.mod h1:Wqfu7mjUHj9WDzSSPI5KfBclTTEnLveRUFr/ujWnTgE=
-github.com/markusmobius/go-dateparser v1.4.4 h1:79+zZ9o3OAo4x7BHlSLhq7u8BD7qBr7kbwb6ilHZVgg=
-github.com/markusmobius/go-dateparser v1.4.4/go.mod h1:Mn9FshDlbUnkdM/ibe4Pjlg6EwgrAvqfKdt4PMAcTOo=
+github.com/markusmobius/go-dateparser v1.4.5 h1:Y34+feJSV/d7QGMbLFlQSfdPDVdhQS5qVL8/sHJ9eKk=
+github.com/markusmobius/go-dateparser v1.4.5/go.mod h1:I01flUSk65Hu32jRDsxzxmW3SCk1EsW8kB7e0IpYgm4=
 github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWDWE=
 github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
 github.com/tetratelabs/wazero v1.12.0 h1:DuWcpNu/FzgEXgGBDp8J1Spc+CWOvvtvVyjKlaZopYU=

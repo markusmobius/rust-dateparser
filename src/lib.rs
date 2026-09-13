@@ -7,10 +7,13 @@ mod config;
 mod formatted;
 mod language;
 mod locale;
+mod non_gregorian;
 mod nospace;
 mod parser;
 mod relative;
+mod search;
 mod text;
+mod time_span;
 mod timezone;
 mod timezone_data;
 mod tokenizer;
@@ -25,7 +28,9 @@ pub use config::{
     Configuration, DateOrder, DateOrderResolver, PreferredDateSource, PreferredDayOfMonth,
     PreferredMonthOfYear,
 };
+pub use non_gregorian::{parse_hijri, parse_jalali};
 pub use parser::{parse, parse_with_formats, DetectLanguagesFunction, Parser, ParserType};
+pub use search::{search, search_with_language, SearchResult};
 pub use timezone::{Timezone, TimezoneOffset};
 
 pub fn is_known_locale(code: &str) -> bool {
@@ -72,17 +77,22 @@ pub fn parse_relative(configuration: &Configuration, input: &str) -> Result<Date
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Error {
     InvalidConfiguration(String),
+    InvalidSearchConfiguration(String),
     InvalidTimezone(String),
     UnknownLocales(Vec<String>),
     UnknownLanguages(Vec<String>),
     ConflictingLocales,
+    UnknownLanguage(String),
+    LanguageDetection,
     UnknownFormat(String),
+    CalendarParsing(String),
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidConfiguration(message) => write!(formatter, "config error: {message}"),
+            Self::InvalidSearchConfiguration(message) => formatter.write_str(message),
             Self::InvalidTimezone(name) => write!(formatter, "unknown time zone {name}"),
             Self::UnknownLocales(locales) => {
                 write!(formatter, "unknown locale(s): {}", locales.join(", "))
@@ -93,9 +103,14 @@ impl fmt::Display for Error {
             Self::ConflictingLocales => {
                 formatter.write_str("locales should not have same language and different region")
             }
+            Self::UnknownLanguage(language) => write!(formatter, "unknown language: {language}"),
+            Self::LanguageDetection => {
+                formatter.write_str("detector failed to find the suitable language")
+            }
             Self::UnknownFormat(input) => {
                 write!(formatter, "failed to parse \"{input}\": unknown format")
             }
+            Self::CalendarParsing(message) => formatter.write_str(message),
         }
     }
 }

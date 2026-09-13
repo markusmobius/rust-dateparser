@@ -16,6 +16,12 @@ pub(crate) struct Locale {
     pub name: String,
     pub date_order: String,
     pub no_word_spacing: bool,
+    #[serde(default)]
+    pub sentence_splitter_group: usize,
+    #[serde(default)]
+    pub charset: String,
+    #[serde(default)]
+    pub abbreviations: Option<Vec<String>>,
     pub simplifications: Vec<Replacement>,
     pub translations: HashMap<String, Vec<String>>,
     pub relative_type: HashMap<String, String>,
@@ -25,6 +31,8 @@ pub(crate) struct Locale {
     pub known_words: Vec<String>,
     #[serde(skip)]
     known_word_matcher: OnceLock<AhoCorasick>,
+    #[serde(skip)]
+    applicability_dictionary: OnceLock<HashMap<String, bool>>,
 }
 
 #[derive(Deserialize)]
@@ -72,6 +80,34 @@ impl Locales {
 }
 
 impl Locale {
+    pub fn applicability_dictionary(&self) -> &HashMap<String, bool> {
+        self.applicability_dictionary.get_or_init(|| {
+            let mut dictionary = HashMap::new();
+            let mut add_words = |phrase: &str, meaningful: bool| {
+                let words = if phrase.contains(' ') {
+                    phrase.split_whitespace().collect()
+                } else {
+                    vec![phrase]
+                };
+                for word in words {
+                    *dictionary.entry(word.to_string()).or_insert(false) |= meaningful;
+                }
+            };
+            for (phrase, translations) in &self.translations {
+                add_words(
+                    phrase,
+                    translations
+                        .iter()
+                        .any(|translation| !translation.is_empty()),
+                );
+            }
+            for (phrase, translation) in &self.relative_type {
+                add_words(phrase, !translation.is_empty());
+            }
+            dictionary
+        })
+    }
+
     pub fn known_word_matcher(&self) -> &AhoCorasick {
         self.known_word_matcher.get_or_init(|| {
             AhoCorasick::new(
@@ -86,6 +122,7 @@ impl Locale {
 
     pub fn exact_match(&self, input: &str) -> bool {
         self.exact_combined >= 0
+            && input.bytes().any(|byte| byte.is_ascii_digit())
             && data()
                 .expression(self.exact_combined as usize)
                 .is_match(input)
@@ -96,12 +133,93 @@ impl Locale {
     }
 }
 
+pub(crate) fn load_languages(
+    locales: &[String],
+    languages: &[String],
+    given_order: bool,
+) -> Result<Vec<String>, Error> {
+    let data = data();
+    if locales.is_empty() && languages.is_empty() {
+        static DEFAULTS: OnceLock<Vec<String>> = OnceLock::new();
+        return Ok(DEFAULTS
+            .get_or_init(|| {
+                let mut languages: Vec<_> = data.language_order.keys().cloned().collect();
+                languages.sort_by_key(|name| data.language_order[name]);
+                languages
+            })
+            .clone());
+    }
+    let mut result = Vec::new();
+    let mut unknown = Vec::new();
+    if !locales.is_empty() {
+        for name in locales {
+            if data.get(name).is_none() {
+                unknown.push(name.clone());
+                continue;
+            }
+            let language = name
+                .rsplit_once('-')
+                .filter(|(_, suffix)| !suffix.is_empty() && suffix.to_uppercase() == *suffix)
+                .map_or(name.as_str(), |(language, _)| language);
+            if !result.iter().any(|name| name == language) {
+                result.push(language.into());
+            }
+        }
+        if !unknown.is_empty() {
+            return Err(Error::UnknownLocales(unknown));
+        }
+    } else {
+        result = languages.to_vec();
+        for name in languages {
+            if !data.language_order.contains_key(name) {
+                unknown.push(name.clone());
+            }
+        }
+        if !unknown.is_empty() {
+            return Err(Error::UnknownLanguages(unknown));
+        }
+    }
+    if !given_order {
+        result.sort_by(|left, right| {
+            data.language_order[left]
+                .cmp(&data.language_order[right])
+                .then(left.cmp(right))
+        });
+    }
+    if result.is_empty() {
+        result.extend(data.language_order.keys().cloned());
+        result.sort_by_key(|name| data.language_order[name]);
+    }
+    Ok(result)
+}
+
 pub(crate) fn load(
     locales: &[String],
     languages: &[String],
     region: &str,
     given_order: bool,
 ) -> Result<Vec<&'static Locale>, Error> {
+    if let [name] = locales {
+        return data()
+            .get(name)
+            .map(|locale| vec![locale])
+            .ok_or_else(|| Error::UnknownLocales(vec![name.clone()]));
+    }
+    if locales.is_empty() {
+        if let [language] = languages {
+            let data = data();
+            if !data.language_order.contains_key(language) {
+                return Err(Error::UnknownLanguages(vec![language.clone()]));
+            }
+            let region = region.trim();
+            let locale = if region.is_empty() {
+                data.get(language)
+            } else {
+                data.get(&format!("{language}-{}", region.to_uppercase()))
+            };
+            return Ok(locale.into_iter().collect());
+        }
+    }
     if locales.is_empty() && languages.is_empty() && region.trim().is_empty() {
         static DEFAULTS: [OnceLock<Vec<&'static Locale>>; 2] = [const { OnceLock::new() }; 2];
         return Ok(DEFAULTS[usize::from(given_order)]
@@ -195,6 +313,65 @@ fn load_uncached(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn single_locale_loading_matches_general_validation() {
+        for given_order in [false, true] {
+            for name in data()
+                .locale_order
+                .keys()
+                .chain(["unknown".to_string()].iter())
+            {
+                for region in ["", "  us ", "ZZ"] {
+                    let names = [name.clone()];
+                    let actual = load(&names, &[], region, given_order).map(|locales| {
+                        locales
+                            .into_iter()
+                            .map(|locale| &locale.name)
+                            .collect::<Vec<_>>()
+                    });
+                    let expected = load_uncached(&names, &[], region, given_order).map(|locales| {
+                        locales
+                            .into_iter()
+                            .map(|locale| &locale.name)
+                            .collect::<Vec<_>>()
+                    });
+                    assert_eq!(actual, expected, "{name} {region}");
+                }
+            }
+            for name in data()
+                .language_order
+                .keys()
+                .chain(["unknown".to_string()].iter())
+            {
+                for region in ["", "  us ", "ZZ"] {
+                    let names = [name.clone()];
+                    let actual = load(&[], &names, region, given_order).map(|locales| {
+                        locales
+                            .into_iter()
+                            .map(|locale| &locale.name)
+                            .collect::<Vec<_>>()
+                    });
+                    let expected = load_uncached(&[], &names, region, given_order).map(|locales| {
+                        locales
+                            .into_iter()
+                            .map(|locale| &locale.name)
+                            .collect::<Vec<_>>()
+                    });
+                    assert_eq!(actual, expected, "{name} {region}");
+                }
+            }
+            let expected = load_uncached(&[], &[], "", true).unwrap();
+            let actual = load_languages(&[], &[], given_order).unwrap();
+            assert_eq!(
+                actual,
+                expected
+                    .iter()
+                    .map(|locale| locale.name.clone())
+                    .collect::<Vec<_>>()
+            );
+        }
+    }
 
     #[test]
     fn cached_default_locales_preserve_order() {

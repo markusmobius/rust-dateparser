@@ -498,6 +498,9 @@ pub(crate) fn parse_layout(
 }
 
 pub(crate) fn parse(configuration: &Configuration, input: &str, formats: &[&str]) -> Option<Date> {
+    if formats.is_empty() {
+        return None;
+    }
     let zone = detected_zone(input)
         .or_else(|| configuration.default_timezone.clone())
         .unwrap_or(Timezone::Utc);

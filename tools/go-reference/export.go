@@ -179,6 +179,37 @@ func rustPattern(pattern string) string {
 	return render(expression)
 }
 
+func requiresASCIIDigit(expression *syntax.Regexp) bool {
+	switch expression.Op {
+	case syntax.OpLiteral:
+		for _, character := range expression.Rune {
+			if character >= '0' && character <= '9' {
+				return true
+			}
+		}
+	case syntax.OpCharClass:
+		return len(expression.Rune) > 0 && expression.Rune[0] >= '0' && expression.Rune[len(expression.Rune)-1] <= '9'
+	case syntax.OpCapture, syntax.OpPlus:
+		return requiresASCIIDigit(expression.Sub[0])
+	case syntax.OpRepeat:
+		return expression.Min > 0 && requiresASCIIDigit(expression.Sub[0])
+	case syntax.OpConcat:
+		for _, child := range expression.Sub {
+			if requiresASCIIDigit(child) {
+				return true
+			}
+		}
+	case syntax.OpAlternate:
+		for _, child := range expression.Sub {
+			if !requiresASCIIDigit(child) {
+				return false
+			}
+		}
+		return true
+	}
+	return false
+}
+
 type localeReplacement struct {
 	Pattern     int    `json:"pattern"`
 	Replacement string `json:"replacement"`
@@ -263,6 +294,16 @@ func exportLocales(root, moduleDir string, provenance *reference) {
 		patternSources[pattern] = index
 		return index
 	}
+	internCombinedPattern := func(pattern string) int {
+		expression, err := syntax.Parse(pattern, syntax.Perl)
+		if err != nil {
+			panic(err)
+		}
+		if !requiresASCIIDigit(expression) {
+			panic("combined locale patterns must require an ASCII digit")
+		}
+		return internPattern(pattern)
+	}
 	replacements := func(entries []data.ReplacementData) []localeReplacement {
 		results := make([]localeReplacement, 0, len(entries))
 		for _, entry := range entries {
@@ -293,10 +334,10 @@ func exportLocales(root, moduleDir string, provenance *reference) {
 			entry.KnownWords = []string{}
 		}
 		if locale.RxCombined != nil {
-			entry.Combined = internPattern(locale.RxCombined.String())
+			entry.Combined = internCombinedPattern(locale.RxCombined.String())
 		}
 		if locale.RxExactCombined != nil {
-			entry.ExactCombined = internPattern(locale.RxExactCombined.String())
+			entry.ExactCombined = internCombinedPattern(locale.RxExactCombined.String())
 		}
 		document.Locales = append(document.Locales, entry)
 	}
@@ -440,4 +481,5 @@ func exportTimezoneMatchers(output *bytes.Buffer, source *ast.File) {
 	}
 	slices.Sort(searches)
 	fmt.Fprintf(output, "\npub(crate) const TOKEN_PATTERN: &str =\n    %s;\n", rustString(rustPattern("(?i)^(?:"+strings.Join(searches, "|")+")$")))
+	fmt.Fprintf(output, "\npub(crate) const SEARCH_PATTERN: &str =\n    %s;\n", rustString(rustPattern(strings.Join(searches, "|"))))
 }

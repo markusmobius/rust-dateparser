@@ -56,6 +56,9 @@ fn matcher_index(input: &str) -> Option<usize> {
             .build()
             .expect("pinned Go timezone patterns must compile")
     });
+    if !matchers.is_match(input) {
+        return None;
+    }
     matchers.matches(input).iter().next()
 }
 
@@ -73,6 +76,16 @@ pub(crate) fn is_token(input: &str) -> bool {
                 .expect("pinned timezone token expression must compile")
         })
         .is_match(input.trim())
+}
+
+pub(crate) fn word_is_timezone(input: &str) -> bool {
+    static EXPRESSION: OnceLock<regex::Regex> = OnceLock::new();
+    EXPRESSION
+        .get_or_init(|| {
+            regex::Regex::new(crate::timezone_data::SEARCH_PATTERN)
+                .expect("pinned timezone search expression must compile")
+        })
+        .is_match(input)
 }
 
 pub(crate) fn pop_offset(input: &str) -> (String, Option<Timezone>) {

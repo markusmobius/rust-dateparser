@@ -34,9 +34,10 @@ pub struct Parser {
     pub parser_types: Vec<ParserType>,
     pub detect_languages_function: Option<DetectLanguagesFunction>,
     used_locales: Mutex<Vec<&'static locale::Locale>>,
+    pub(crate) search_charsets: Mutex<(Vec<String>, Arc<language::UniqueCharsets>)>,
 }
 
-fn default_parser() -> &'static Parser {
+pub(crate) fn default_parser() -> &'static Parser {
     static PARSER: OnceLock<Parser> = OnceLock::new();
     PARSER.get_or_init(Parser::default)
 }
@@ -119,8 +120,19 @@ impl Parser {
     ) -> Result<impl Iterator<Item = &'static locale::Locale> + 'configuration, Error> {
         let input = text::normalize(input);
         let popped = timezone::pop_offset(&input).0;
-        let mut inputs = vec![text::normalize_digits(&text::normalize(&input))];
-        if popped != input {
+        let has_timezone = popped != input;
+        let mut languages = configuration.languages.clone();
+        if configuration.locales.is_empty() && languages.is_empty() {
+            if let Some(detector) = &self.detect_languages_function {
+                languages.extend(detector(&input));
+            }
+        }
+        let mut inputs = vec![if input.is_ascii() {
+            input
+        } else {
+            text::normalize_digits(&text::normalize(&input))
+        }];
+        if has_timezone {
             inputs.push(text::normalize_digits(&text::normalize(&popped)));
         }
         let applicable = move |locale, inputs: &[String]| {
@@ -136,12 +148,6 @@ impl Parser {
         } else {
             None
         };
-        let mut languages = configuration.languages.clone();
-        if configuration.locales.is_empty() && languages.is_empty() {
-            if let Some(detector) = &self.detect_languages_function {
-                languages.extend(detector(&input));
-            }
-        }
         let locales = locale::load(
             &configuration.locales,
             &languages,
@@ -227,13 +233,6 @@ impl Parser {
                 false,
                 ignore_surrounding,
             );
-            let formatted_translations = language::translate(
-                &locale_configuration,
-                locale,
-                input,
-                true,
-                ignore_surrounding,
-            );
             for &parser in parsers {
                 let date = match parser {
                     ParserType::Timestamp => {
@@ -246,9 +245,21 @@ impl Parser {
                         relative::parse(&locale_configuration, translation)
                     }),
                     ParserType::CustomFormat => {
-                        formatted_translations.iter().find_map(|translation| {
-                            formatted::parse(&locale_configuration, translation, formats)
-                        })
+                        if formats.is_empty() {
+                            None
+                        } else {
+                            language::translate(
+                                &locale_configuration,
+                                locale,
+                                input,
+                                true,
+                                ignore_surrounding,
+                            )
+                            .iter()
+                            .find_map(|translation| {
+                                formatted::parse(&locale_configuration, translation, formats)
+                            })
+                        }
                     }
                     ParserType::AbsoluteTime | ParserType::NoSpacesTime => {
                         let mut parsed = None;

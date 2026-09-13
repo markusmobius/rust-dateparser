@@ -10,10 +10,10 @@ expressions and Unix timestamps. The implementation uses native Rust code and
 embedded locale data, with no Go, Python, native RE2 library, or network service
 required at runtime.
 
-The published source implements localized `Parse` behavior. Search and
-non-Gregorian calendar APIs are implemented in the unreleased development
-checkout measured below, but are not yet included in the published source.
-This is not yet a complete replacement for either upstream library.
+The public API includes localized parsing, split and n-gram search, time spans,
+Jalali parsing and Hijri/Umm al-Qura parsing. The immediate Go reference is
+**v1.4.5**, with independent Python dateparser 1.4.3 checks for calendars and
+search. Compatibility limits and verification coverage are documented below.
 
 ## Usage
 
@@ -47,6 +47,50 @@ empty `locale`, as in Go.
 `locale: String`. `Timezone` retains UTC, local, named fixed-offset, or IANA zone
 identity. By default, absent date components come from `current_time`, which
 defaults to the current UTC time. Set it explicitly for repeatable results.
+
+## Search and Calendars
+
+`search` returns a detected language and `SearchResult` values containing the
+matched `text` and parsed `date`. `search_with_language` accepts a known language
+and returns just the matches. Both also have methods on `Parser`.
+
+```rust
+use chrono::TimeZone;
+use rust_dateparser::{parse_hijri, parse_jalali, search, Configuration, Timezone};
+
+let configuration = Configuration {
+  current_time: Some(Timezone::Utc.with_ymd_and_hms(2025, 2, 15, 12, 0, 0).unwrap()),
+  languages: vec!["en".into()],
+  search_strategy: "ngram".into(),
+  ..Configuration::default()
+};
+
+let (language, matches) = search(
+  &configuration,
+  "The first satellite was launched on 4 October 1957.",
+)?;
+assert_eq!(language, "en");
+assert_eq!(matches[0].text, "4 October 1957");
+assert_eq!(matches[0].date.time.format("%F").to_string(), "1957-10-04");
+
+let jalali = parse_jalali(&configuration, "1/1/1403")?;
+assert_eq!(jalali.time.format("%F").to_string(), "2024-03-20");
+let hijri = parse_hijri(&configuration, "1/1/1444")?;
+assert_eq!(hijri.time.format("%F").to_string(), "2022-07-30");
+# Ok::<(), rust_dateparser::Error>(())
+```
+
+`search_strategy` defaults to `"split"`; `"ngram"` tries longer token sequences
+first. Set `return_time_span` to include start/end matches for expressions such
+as `"past week"`. `default_start_of_week` and `default_days_in_month` control
+span boundaries. Search is heuristic; restrict languages when they are known.
+
+Both calendar parsers default to MDY. Missing components come from the reference
+date converted to that calendar; only an omitted day is clamped to the month's
+last day. Explicit overflowing days retain upstream rollover behavior.
+Umm al-Qura supports years 1343-1500 AH. Unsupported reference or result dates
+return errors. Conversion tables and their exact bounds are embedded in
+[data/calendar-conversions.json](data/calendar-conversions.json).
 
 ## Configuration
 
@@ -99,11 +143,13 @@ independent history.
 | Locale data, normalization, tokenization, translation, applicability | 512 locales / 205 language codes; 8,952 Go comparison cases |
 | `is_known_locale`, `pop_tz_offset`, `Timezone::load` | Implemented |
 | `parse_absolute`, `parse_relative`, `parse_formatted`, `parse_no_spaces`, `parse_timestamp` | Core-stage helpers; these do not perform the complete locale dispatch |
-| `Search`, `SearchWithLanguage`, n-grams, time spans, full-text language detection | Not yet ported |
-| `ParseJalali`, `ParseHijri` / Umm al-Qura | Not yet ported |
+| `search`, `search_with_language`, n-grams, time spans, full-text language detection | Implemented |
+| `parse_jalali`, `parse_hijri` / Umm al-Qura | Implemented with native conversion tables |
 
-Search-related configuration fields are retained for the later search port;
-they do not enable search through `parse`.
+Search and calendars have 9,886 exact supplementary Go v1.4.5 comparison cases,
+with no excluded cases or substituted inputs. Independent Python fixtures cover
+7,504 calendar cases, 178 exact search cases and ten exception-safety inputs.
+Search-related configuration applies to the search APIs, not `parse`.
 The original regex definitions are executed with Rust's `regex` crate. The
 re2go-generated exact-match functions and optional native/WASM backends are not
 ported or required.
@@ -122,8 +168,8 @@ corpus are not an exhaustive compatibility proof.
 
 ## Speed Comparison
 
-The optimized RustDateParser development checkout versus published
-**Go-DateParser v1.4.5**, measured on 2026-09-13 with Rust
+The optimized RustDateParser implementation versus published
+**Go-DateParser v1.4.5**, measured before publication on 2026-09-13 with Rust
 1.98.1 and Go 1.27.1 on an AMD Ryzen AI 7 PRO 350, Linux x86_64/WSL2. Both use
 portable optimized builds, CPU 2 and one parsing caller, without internal
 parallelism. Go uses `GOMAXPROCS=1`, default garbage collection and its pure-Go
@@ -164,15 +210,14 @@ HtmlDate; warmed gains do not imply startup gains. The
 retains all 108 Rust/Go v1.4.5 processes and 864 warm passes across nine cohorts,
 plus the separate Go v1.4.3 comparison. It includes ranges, first-pass latency,
 execution orders, per-suite binary hashes and module provenance. This is a
-development-checkout measurement, not a newly published Rust runtime release.
+dated measurement of the development build, not a claim about every later build.
 
 The Rust runtime caches per-locale Aho-Corasick word matchers and default locale
 orders, shares input preparation and checks locale applicability lazily.
 Matchers are built once on first use, not generated at build time. Exact
 dictionary priority, first-occurrence behavior and Unicode boundaries are retained.
 
-Reproduce from the development checkout under Linux/WSL with Python 3.9+, Rust
-and Go; the published core-only checkout does not yet contain the feature runner:
+Reproduce from the repository root under Linux/WSL with Python 3.9+, Rust and Go:
 
 ```sh
 python3 tools/benchmark.py --runs 6 --passes 8 --cpu 2
@@ -185,8 +230,10 @@ summary statistics under the ignored `target/benchmark/` directory. Use
 `--cohort auto`, `--cohort explicit` or `--cohort htmldate` for one cohort and
 `--output` to choose a report path. The default compares only Rust and the
 published Go v1.4.5 module, without local module replacements or lockfile changes.
-The recorded core fixture remains a separate baseline; upgrading the fixture
-exporter is independent of selecting the published module for benchmarking.
+The current fixture exporter is pinned to Go v1.4.5. The archived core report
+predates that provenance update; all 4,302 core case records and 8,952 language
+case records remained unchanged during the rebaseline. The archived report and
+its original hashes are retained without relabelling measurements.
 
 ## Verification
 
@@ -206,21 +253,26 @@ errors and callback inputs, and tests shared-parser isolation. Language tests
 also compare normalized text, split tokens, applicability and every translation
 in order. Focused tests cover overlapping dictionary matches, first-occurrence
 and priority rules, Unicode boundaries, cached locale ordering, detector inputs
-and configuration errors with previous-locale reuse.
-The default suite passes 30 library tests and both README doctests;
-the live Go comparison and timing benchmark are opt-in tests.
+and configuration errors with previous-locale reuse. The default suite also
+includes the complete supplementary Go fixture and independent Python calendar,
+search and overflow checks. Two live Go comparisons and two timing benchmarks
+are opt-in; the checked-in Go feature fixture is not ignored or filtered.
 
 To generate a fresh, development-only Go reference from this repository root:
 
 ```sh
 GOTOOLCHAIN=go1.27.1 CGO_ENABLED=0 TZ=UTC \
   go -C tools/go-reference run -mod=readonly . -output ../../target/go-reference.json
-cargo test --locked --lib live_go_parity -- --ignored --nocapture
+GOTOOLCHAIN=go1.27.1 CGO_ENABLED=0 GOMAXPROCS=1 TZ=UTC \
+  go -C tools/go-reference run -mod=readonly . -features-output ../../target/go-features-reference.json
+cargo test --locked --lib live_go_ -- --ignored --nocapture
 go -C tools/go-reference vet -mod=readonly ./...
 ```
 
-Omit `-output` to refresh the checked-in snapshot. The generator also reproduces
-the locale/timezone data, but never writes or splits the combined project license.
+Omit `-output` to refresh the checked-in core snapshot; use
+`-features-output ../../testdata/go-features.json` for the feature snapshot.
+The generator also reproduces locale/timezone data, calendar vocabulary and the
+native conversion tables, but never writes or splits the combined project license.
 It uses Go's structured data and regex syntax APIs, verifies the reference versions
 and module checksum, and never derives expected dates from Rust.
 
@@ -229,16 +281,10 @@ consults the wall-clock year; the oracle records that year, and Rust fixture tes
 use the recorded value. Timestamp results are compared in UTC to avoid host-local
 zone differences; the timestamp runtime itself retains local-zone identity.
 
-CI is configured for Linux and Windows/MSVC, with a separate live Go check on
-Linux. The optimized runtime and v1.4.4 reference passed local validation on
-2026-09-12 under Linux/WSL and native Windows x86_64/GNU. The Windows release run passed all 31
-library tests, including the opt-in live Go comparison, and both doctests; only
-the timing benchmark was excluded. Both platforms matched 4,302 exact parsing
-cases and 8,952 language cases across all 512 locales. Linux also passed
-formatting, Clippy, Go vet and the release build. Fresh Go generation reproduced
-the new saved fixture byte-for-byte. Rebaselining changed version/source
-provenance, not expected results, actual locale data, timezone rules or the
-combined license. Go module verification also passed.
+CI runs the full suite, formatting, Clippy and release builds on Linux and
+Windows/MSVC. Linux also regenerates both Go fixtures, checks live parity and
+rejects changes to the generated data, timezone rules and license notices.
+Fixture generation preserves the combined license byte-for-byte.
 
 For a local Windows GNU toolchain, select the GNU **host toolchain**, not only a
 cross-compilation target:
@@ -253,15 +299,17 @@ $env:PATH = 'C:/msys64/ucrt64/bin;' + $env:PATH
 
 | Reference | Pin |
 | --- | --- |
-| Go-DateParser | v1.4.4, source commit `577619dabf1814609ac9e3010b34e4dc6b213694` |
-| Annotated Go tag object | `a2c7c90d123ea85fbb1cedc43f5122b096cee9ca` (not the source commit) |
-| Go module checksum | `h1:79+zZ9o3OAo4x7BHlSLhq7u8BD7qBr7kbwb6ilHZVgg=` |
+| Go-DateParser | v1.4.5, source commit `e02a0cfd80decdd47412d773b4799a89af078409` |
+| Annotated Go tag object | `78257ee87860f23232eced745827eff829cd1a12` (not the source commit) |
+| Go module checksum | `h1:Y34+feJSV/d7QGMbLFlQSfdPDVdhQS5qVL8/sHJ9eKk=` |
 | Go oracle | Go 1.27.1, `golang.org/x/text v0.42.0` |
 | Python source behind the Go port | dateparser 1.4.3, `9ce60b1958f1b285886bcfbb743f6419feacfc92` |
 
-The versioned Go implementation is the immediate behavior reference. An
-independent Python comparison has not yet been run for this Rust milestone.
-Go intentionally differs from Python in several documented settings and results.
+Python dateparser 1.4.3 is the behavior authority; Go v1.4.5 is the immediate
+porting reference. The independent [Python fixture](testdata/python-features.json)
+records package versions and imported source hashes. Python exception inputs
+are checked for safe handling, not fabricated successful dates. Go intentionally
+differs from Python in several documented settings and result representations.
 
 [data/locales.json](data/locales.json) records hashes of its Go source files and
 retains merged locale dictionaries, ordered substitutions, shared regexes and
@@ -270,9 +318,17 @@ names and their matching rules. The fixture verifies the locale-data and combine
 project-license hashes. The original upstream notice hashes are recorded
 separately as provenance. Cargo and Go lockfiles retain their dependency checksums.
 
+[data/calendars.json](data/calendars.json) contains Go-derived calendar vocabulary.
+[data/calendar-conversions.json](data/calendar-conversions.json) is byte-identical
+to the published Go tables generated with `convertdate` 2.4.1 and `hijridate`
+2.6.0. Their source hashes and bounds are recorded with the data; neither package
+is a runtime dependency. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
 ## License
 
 BSD-3-Clause. The combined [LICENSE](LICENSE) credits Scrapinghub (2014) and
 Markus Mobius (2026) for the Python-derived code/data and the Rust port.
-Dependency notices remain under their respective licenses. Binary-distribution
-notice packaging remains a later release task.
+Calendar data-source notices are retained in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Dependency notices remain under
+their respective licenses. Binary-distribution notice packaging remains a later
+release task.
