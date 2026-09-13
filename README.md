@@ -3,17 +3,17 @@
 RustDateParser is a Rust implementation of the Python library
 [scrapinghub/dateparser](https://github.com/scrapinghub/dateparser), built by
 faithfully replicating its Go port,
-[markusmobius/go-dateparser](https://github.com/markusmobius/go-dateparser)
-**v1.4.4**.
+[markusmobius/go-dateparser](https://github.com/markusmobius/go-dateparser).
 
 It parses localized date and time strings, including absolute dates, relative
 expressions and Unix timestamps. The implementation uses native Rust code and
 embedded locale data, with no Go, Python, native RE2 library, or network service
 required at runtime.
 
-Localized `Parse` behavior is implemented; the separate search and non-Gregorian
-calendar APIs are not yet ported. This is not yet a complete replacement for
-either upstream library.
+The published source implements localized `Parse` behavior. Search and
+non-Gregorian calendar APIs are implemented in the unreleased development
+checkout measured below, but are not yet included in the published source.
+This is not yet a complete replacement for either upstream library.
 
 ## Usage
 
@@ -122,46 +122,61 @@ corpus are not an exhaustive compatibility proof.
 
 ## Speed Comparison
 
-RustDateParser versus **Go-DateParser v1.4.4**, measured on 2026-09-12 with Rust
+The optimized RustDateParser development checkout versus published
+**Go-DateParser v1.4.5**, measured on 2026-09-13 with Rust
 1.98.1 and Go 1.27.1 on an AMD Ryzen AI 7 PRO 350, Linux x86_64/WSL2. Both use
 portable optimized builds, CPU 2 and one parsing caller, without internal
 parallelism. Go uses `GOMAXPROCS=1`, default garbage collection and its pure-Go
 backend.
 
-Both repositories use the same [fixture](testdata/go-core.json), runner and
-Go v1.4.4 samples. The 2,951 stateless public cases retain their original
-settings, formats and frozen reference times; 16 detector/history cases are
-excluded. Each implementation validates exact dates, errors, periods, locales,
-offsets and nanoseconds before timing. Parsed counts are not accuracy scores.
+Both repositories use the same Go v1.4.5 samples. The three core cohorts contain
+2,951 stateless public cases from the [core fixture](testdata/go-core.json), with
+their original settings, formats and frozen reference times; 16 detector/history
+cases are excluded. The six feature cohorts contain 7,676 Python-reference cases,
+excluding six callbacks and ten Python exception inputs. Both implementations
+validate the expected results, including rejections, before timing. Parsed counts
+count inputs yielding at least one date, not individual matches or accuracy.
 
-| Cohort | Inputs (Parsed) | Rust Warm Pass | Go v1.4.4 Warm Pass | Go/Rust Time |
+| Cohort | Inputs (Parsed) | Rust Warm Pass | Go v1.4.5 Warm Pass | Go/Rust Time |
 | --- | --- | --- | --- | --- |
-| Automatic locale detection | 226 (222) | 26.14 ms | 186.44 ms | 7.13x |
-| Explicit locales/languages | 2,530 (2,388) | 66.66 ms | 915.56 ms | 13.74x |
-| HtmlDate strict/past configuration | 195 (167) | 48.73 ms | 263.22 ms | 5.40x |
+| Automatic locale detection | 226 (222) | 14.90 ms | 150.67 ms | 10.11x |
+| Explicit locales/languages | 2,530 (2,388) | 44.27 ms | 1,017.53 ms | 22.98x |
+| HtmlDate strict/past | 195 (167) | 27.58 ms | 264.97 ms | 9.61x |
+| Automatic search | 3 (3) | 1.11 ms | 9.82 ms | 8.85x |
+| Split search | 34 (29) | 0.87 ms | 23.05 ms | 26.47x |
+| N-gram search | 39 (36) | 3.26 ms | 65.79 ms | 20.18x |
+| Time-span search | 96 (96) | 2.19 ms | 21.88 ms | 9.97x |
+| Jalali parsing | 1,311 (1,087) | 6.99 ms | 12.47 ms | 1.78x |
+| Hijri parsing | 6,193 (5,994) | 8.40 ms | 44.65 ms | 5.32x |
 
-Times are complete warmed passes, summarized as the median of six per-process
-pass medians. Each process performs eight measured passes after a validated
-first pass; execution order is balanced and separate preflights are discarded.
-Setup, fixture decoding, initial matcher/regex construction and output checks
-are outside the warm timers. Compare engines within a row, not different cohorts.
-These regression-corpus results are not a production throughput guarantee.
+Times are per complete corpus traversal, summarized as the median of six
+per-process pass medians. Each process performs eight measured passes after a
+validated first pass; feature passes repeat the corpus 16 times and are divided
+by 16 here. Execution order is balanced and separate preflights are discarded.
+Setup, fixture decoding, initial matcher/regex construction and output checks are
+outside the warm timers. Automatic search has only three texts. Compare engines
+within a row, not different cohorts. These regression-corpus results are not a
+production throughput guarantee.
 
 Go reaches the first validated full pass sooner for automatic detection and
 HtmlDate; warmed gains do not imply startup gains. The
-[raw report](https://github.com/markusmobius/go-dateparser/releases/download/v1.4.4/shared-dateparser-2026-09-12.json)
-retains all 36 Rust/Go v1.4.4 processes and 288 warm passes, ranges, first-pass
-latency, execution orders, binary hashes and module provenance.
+[raw report](https://github.com/markusmobius/go-dateparser/releases/download/v1.4.5/dateparser-nine-cohorts-2026-09-13.json)
+retains all 108 Rust/Go v1.4.5 processes and 864 warm passes across nine cohorts,
+plus the separate Go v1.4.3 comparison. It includes ranges, first-pass latency,
+execution orders, per-suite binary hashes and module provenance. This is a
+development-checkout measurement, not a newly published Rust runtime release.
 
 The Rust runtime caches per-locale Aho-Corasick word matchers and default locale
 orders, shares input preparation and checks locale applicability lazily.
 Matchers are built once on first use, not generated at build time. Exact
 dictionary priority, first-occurrence behavior and Unicode boundaries are retained.
 
-Reproduce from the repository root under Linux/WSL with Python 3.9+, Rust and Go:
+Reproduce from the development checkout under Linux/WSL with Python 3.9+, Rust
+and Go; the published core-only checkout does not yet contain the feature runner:
 
 ```sh
 python3 tools/benchmark.py --runs 6 --passes 8 --cpu 2
+python3 tools/benchmark.py --features --runs 6 --passes 8 --iterations 16 --cpu 2
 ```
 
 [tools/benchmark.py](tools/benchmark.py) builds all selected runners, enforces single-core
@@ -169,8 +184,9 @@ execution and saves all samples, toolchain versions, fixture/binary hashes and
 summary statistics under the ignored `target/benchmark/` directory. Use
 `--cohort auto`, `--cohort explicit` or `--cohort htmldate` for one cohort and
 `--output` to choose a report path. The default compares only Rust and the
-published Go v1.4.4 module, without local module replacements or lockfile changes.
-Fixture generation also stays pinned to v1.4.4.
+published Go v1.4.5 module, without local module replacements or lockfile changes.
+The recorded core fixture remains a separate baseline; upgrading the fixture
+exporter is independent of selecting the published module for benchmarking.
 
 ## Verification
 
