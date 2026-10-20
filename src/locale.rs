@@ -4,6 +4,7 @@ use crate::Error;
 use aho_corasick::AhoCorasick;
 use regex::{Regex, RegexBuilder};
 use serde::Deserialize;
+use serde_json::value::RawValue;
 
 #[derive(Deserialize)]
 pub(crate) struct Replacement {
@@ -36,42 +37,92 @@ pub(crate) struct Locale {
 }
 
 #[derive(Deserialize)]
+struct RawLocales<'a> {
+    language_order: HashMap<String, usize>,
+    locale_order: HashMap<String, usize>,
+    #[serde(borrow)]
+    locales: Vec<&'a RawValue>,
+    #[serde(borrow)]
+    patterns: Vec<&'a RawValue>,
+    digit_mappings: Vec<[u32; 2]>,
+}
+
+#[derive(Deserialize)]
+struct LocaleName<'a> {
+    #[serde(borrow)]
+    name: &'a str,
+}
+
+// Decoding all 512 locales and 3,783 patterns up front dominated the first
+// call, so they stay as raw JSON until a locale or expression is requested.
 pub(crate) struct Locales {
     pub language_order: HashMap<String, usize>,
     pub locale_order: HashMap<String, usize>,
-    pub locales: Vec<Locale>,
-    pub patterns: Vec<String>,
     pub digit_mappings: Vec<[u32; 2]>,
-    #[serde(skip)]
+    raw_locales: Vec<&'static RawValue>,
+    decoded: Vec<OnceLock<Locale>>,
+    patterns: Vec<&'static RawValue>,
     compiled: Vec<OnceLock<Regex>>,
-    #[serde(skip)]
-    indexes: HashMap<String, usize>,
+    indexes: HashMap<&'static str, usize>,
 }
 
 pub(crate) fn data() -> &'static Locales {
     static DATA: OnceLock<Locales> = OnceLock::new();
-    DATA.get_or_init(|| {
-        let mut data: Locales = serde_json::from_slice(include_bytes!("../data/locales.json"))
-            .expect("pinned locale data must decode");
-        data.compiled = data.patterns.iter().map(|_| OnceLock::new()).collect();
-        data.indexes = data
-            .locales
-            .iter()
-            .enumerate()
-            .map(|(index, locale)| (locale.name.clone(), index))
-            .collect();
-        data
-    })
+    DATA.get_or_init(Locales::decode)
 }
 
 impl Locales {
+    fn decode() -> Self {
+        let raw: RawLocales<'static> =
+            serde_json::from_slice(include_bytes!("../data/locales.json"))
+                .expect("pinned locale data must decode");
+        let indexes = raw
+            .locales
+            .iter()
+            .enumerate()
+            .map(|(index, locale)| {
+                let name = serde_json::from_str::<LocaleName<'static>>(locale.get())
+                    .expect("pinned locale must have a name")
+                    .name;
+                (name, index)
+            })
+            .collect();
+        Self {
+            language_order: raw.language_order,
+            locale_order: raw.locale_order,
+            digit_mappings: raw.digit_mappings,
+            decoded: raw.locales.iter().map(|_| OnceLock::new()).collect(),
+            raw_locales: raw.locales,
+            compiled: raw.patterns.iter().map(|_| OnceLock::new()).collect(),
+            patterns: raw.patterns,
+            indexes,
+        }
+    }
+
+    pub fn contains(&self, name: &str) -> bool {
+        self.indexes.contains_key(name)
+    }
+
     pub fn get(&self, name: &str) -> Option<&Locale> {
-        self.indexes.get(name).map(|index| &self.locales[*index])
+        self.indexes.get(name).map(|&index| self.locale_at(index))
+    }
+
+    #[cfg(test)]
+    pub fn locales(&self) -> impl Iterator<Item = &Locale> {
+        (0..self.raw_locales.len()).map(|index| self.locale_at(index))
+    }
+
+    fn locale_at(&self, index: usize) -> &Locale {
+        self.decoded[index].get_or_init(|| {
+            serde_json::from_str(self.raw_locales[index].get()).expect("pinned locale must decode")
+        })
     }
 
     pub fn expression(&self, index: usize) -> &Regex {
         self.compiled[index].get_or_init(|| {
-            RegexBuilder::new(&self.patterns[index])
+            let pattern: String = serde_json::from_str(self.patterns[index].get())
+                .expect("pinned locale expression must decode");
+            RegexBuilder::new(&pattern)
                 .size_limit(64 * 1024 * 1024)
                 .build()
                 .expect("pinned locale expression must compile")
@@ -153,7 +204,7 @@ pub(crate) fn load_languages(
     let mut unknown = Vec::new();
     if !locales.is_empty() {
         for name in locales {
-            if data.get(name).is_none() {
+            if !data.contains(name) {
                 unknown.push(name.clone());
                 continue;
             }
@@ -247,7 +298,7 @@ fn load_uncached(
             if seen_locales.contains(name) {
                 continue;
             }
-            if data.get(name).is_none() {
+            if !data.contains(name) {
                 unknown.push(name.clone());
                 continue;
             }
@@ -287,7 +338,7 @@ fn load_uncached(
             } else {
                 format!("{language}-{region}")
             };
-            if seen_locales.contains(&name) || data.get(&name).is_none() {
+            if seen_locales.contains(&name) || !data.contains(&name) {
                 continue;
             }
             seen_locales.insert(name.clone());
@@ -389,17 +440,46 @@ mod tests {
     }
 
     #[test]
+    fn locales_decode_on_first_request() {
+        let data = Locales::decode();
+        assert!(data.decoded.iter().all(|locale| locale.get().is_none()));
+        assert!(data.compiled.iter().all(|pattern| pattern.get().is_none()));
+        assert!(data.contains("fr-CA"));
+        assert!(!data.contains("unknown"));
+        assert!(data.decoded.iter().all(|locale| locale.get().is_none()));
+
+        let locale = data.get("fr-CA").unwrap();
+        assert_eq!(locale.name, "fr-CA");
+        let decoded: Vec<_> = data
+            .decoded
+            .iter()
+            .filter_map(OnceLock::get)
+            .map(|locale| locale.name.as_str())
+            .collect();
+        assert_eq!(decoded, ["fr-CA"]);
+        assert!(std::ptr::eq(locale, data.get("fr-CA").unwrap()));
+    }
+
+    #[test]
+    fn locale_indexes_match_decoded_names() {
+        let data = Locales::decode();
+        for (name, &index) in &data.indexes {
+            assert_eq!(data.locale_at(index).name, *name);
+        }
+    }
+
+    #[test]
     fn locale_data_contains_all_pinned_rules() {
         let data = data();
         assert_eq!(data.language_order.len(), 205);
-        assert_eq!(data.locales.len(), 512);
+        assert_eq!(data.locales().count(), 512);
         assert_eq!(data.locale_order.len(), 512);
         assert_eq!(data.get("en").unwrap().date_order, "MDY");
         assert_eq!(data.get("en-GB").unwrap().date_order, "DMY");
         for index in 0..data.patterns.len() {
             data.expression(index);
         }
-        for locale in &data.locales {
+        for locale in data.locales() {
             assert!(data.locale_order.contains_key(&locale.name));
             for rule in locale
                 .simplifications

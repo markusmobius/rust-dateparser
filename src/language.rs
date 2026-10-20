@@ -934,7 +934,7 @@ mod tests {
             ".!?;|\n\r",
             " ",
         ];
-        for locale in &data().locales {
+        for locale in data().locales() {
             for input in inputs {
                 assert_eq!(
                     split_sentence(locale, input),
@@ -988,7 +988,7 @@ mod tests {
             ]
             .map(String::from),
         );
-        for locale in &data().locales {
+        for locale in data().locales() {
             for formatting in [false, true] {
                 for input in &inputs {
                     assert_eq!(
@@ -1032,7 +1032,7 @@ mod tests {
             "2013\u{5e74}04\u{6708}08\u{65e5}",
             "",
         ];
-        for locale in &data().locales {
+        for locale in data().locales() {
             for formatting in [false, true] {
                 for skipped in [HashSet::new(), HashSet::from(["t", "on", "12"])] {
                     for input in inputs {

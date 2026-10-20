@@ -11,8 +11,8 @@ embedded locale data, with no Go, Python, native RE2 library, or network service
 required at runtime.
 
 The public API includes localized parsing, split and n-gram search, time spans,
-Jalali parsing and Hijri/Umm al-Qura parsing. RustDateParser **v1.4.7** tracks
-[Go-DateParser v1.4.7](https://github.com/markusmobius/go-dateparser/releases/tag/v1.4.7)
+Jalali parsing and Hijri/Umm al-Qura parsing. RustDateParser **v1.4.8** tracks
+[Go-DateParser v1.4.8](https://github.com/markusmobius/go-dateparser/releases/tag/v1.4.8)
 and **Python dateparser v1.4.3**. Calendar and search behavior is independently
 checked against Python. Compatibility limits and verification coverage are
 documented below.
@@ -23,24 +23,31 @@ pinned to commit `3a7537dd3a4e223756fa31fb1941a10da4c78b30` in Cargo. Relative
 arithmetic follows Python's `relativedelta`: month ends clamp, fractional seconds
 retain microsecond precision, and fractional years/months are rejected. Explicit
 invalid Gregorian dates are rejected; omitted days may clamp. These corrections
-were verified against Python first in Go, then in Rust. Version 1.4.7 is a
-dependency refresh with no DateParser runtime algorithm changes. The published
-v1.4.5/v1.4.6 releases and historical performance measurements are unchanged;
-the tables below report their actual v1.4.6 observations, not v1.4.7 timings.
+were verified against Python first in Go, then in Rust. Version 1.4.8 follows
+Go-DateParser v1.4.8 in building locale data on first use: each locale and
+regex is decoded from the embedded data only when it is first requested,
+with no change to parsing results. The published v1.4.5/v1.4.6 releases and
+historical performance measurements are unchanged; the tables below report
+their actual v1.4.6 observations, not v1.4.8 timings.
 
 ## Usage
 
-Use the tagged v1.4.7 GitHub source release:
+Add the crate from crates.io:
 
 ```toml
 [dependencies]
 chrono = "0.4.42"
-rust-dateparser = { git = "https://github.com/markusmobius/rust-dateparser", tag = "v1.4.7", version = "=1.4.7" }
+rust-dateparser = "=1.4.8"
 ```
 
-This release is not published to crates.io. Cargo Git builds use the pinned
-Rust-Dateutil revision; registry packaging with `cargo package` requires that
-dependency to be published to the registry and is not supported here.
+The tagged GitHub source release can be used instead:
+
+```toml
+rust-dateparser = { git = "https://github.com/markusmobius/rust-dateparser", tag = "v1.4.8", version = "=1.4.8" }
+```
+
+Registry builds resolve Rust-Dateutil `=2.9.1` from crates.io; Git builds use
+the pinned Rust-Dateutil revision.
 
 ```rust
 use chrono::TimeZone;
@@ -160,6 +167,13 @@ The library starts no worker threads. Callers own concurrency. `Parser` and
 calls sharing one parser's locale history. Embedded locale data and compiled
 regexes and dictionary matchers are shared. Independent parsers maintain
 independent history.
+
+Nothing is decoded until the first call. The first call reads the locale index
+and ordering tables; each locale, regex and dictionary matcher is then decoded
+or compiled once, on first use, and shared by later calls. Restricting
+`languages` or `locales` limits that work to the requested locales. With no
+languages, locales or region configured, the first call decodes every
+language's base locale, as Go builds every locale in that case.
 
 ## Coverage
 
@@ -421,8 +435,8 @@ $env:PATH = 'C:/msys64/ucrt64/bin;' + $env:PATH
 
 | Reference | Pin |
 | --- | --- |
-| Go-DateParser | [v1.4.7](https://github.com/markusmobius/go-dateparser/releases/tag/v1.4.7) |
-| Current Go behavior recheck | v1.4.7 source `1554533a164fdcab763e59bd42fe46c86bb98a74`; published Go-Dateutil v2.9.1 |
+| Go-DateParser | [v1.4.8](https://github.com/markusmobius/go-dateparser/releases/tag/v1.4.8), source commit `17684bff85634c7598d70c027adaade64338df2f` |
+| Current Go behavior recheck | v1.4.7 source `1554533a164fdcab763e59bd42fe46c86bb98a74`; published Go-Dateutil v2.9.1. Go v1.4.8 changes only locale-data loading, not parsing behavior |
 | Go correction/benchmark source | Pre-release commit `7837629bf3773c8d94524ec603706bec9a0c665b`, with the same runtime as v1.4.6 |
 | Historical Go fixture | v1.4.5, source commit `e02a0cfd80decdd47412d773b4799a89af078409` |
 | Historical annotated Go tag | `78257ee87860f23232eced745827eff829cd1a12` (not the source commit) |

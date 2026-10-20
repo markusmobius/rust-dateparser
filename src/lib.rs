@@ -34,7 +34,7 @@ pub use search::{search, search_with_language, SearchResult};
 pub use timezone::{Timezone, TimezoneOffset};
 
 pub fn is_known_locale(code: &str) -> bool {
-    locale::data().get(code).is_some()
+    locale::data().contains(code)
 }
 
 pub fn pop_tz_offset(input: &str) -> (String, String, i32) {
