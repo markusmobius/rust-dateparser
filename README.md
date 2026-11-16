@@ -11,7 +11,7 @@ embedded locale data, with no Go, Python, native RE2 library, or network service
 required at runtime.
 
 The public API includes localized parsing, split and n-gram search, time spans,
-Jalali parsing and Hijri/Umm al-Qura parsing. RustDateParser **v1.4.8** tracks
+Jalali parsing and Hijri/Umm al-Qura parsing. RustDateParser **v1.4.9** tracks
 [Go-DateParser v1.4.8](https://github.com/markusmobius/go-dateparser/releases/tag/v1.4.8)
 and **Python dateparser v1.4.3**. Calendar and search behavior is independently
 checked against Python. Compatibility limits and verification coverage are
@@ -28,7 +28,10 @@ Go-DateParser v1.4.8 in building locale data on first use: each locale and
 regex is decoded from the embedded data only when it is first requested,
 with no change to parsing results. The published v1.4.5/v1.4.6 releases and
 historical performance measurements are unchanged; the tables below report
-their actual v1.4.6 observations, not v1.4.8 timings.
+their actual v1.4.6 observations, not v1.4.8 timings. Version 1.4.9 changes no
+runtime code: it requires Rust-Dateutil `^2.9.1` instead of exactly `=2.9.1`, so
+compatible Rust-Dateutil patch releases reach downstream lockfiles without a
+new RustDateParser release.
 
 ## Usage
 
@@ -37,16 +40,16 @@ Add the crate from crates.io:
 ```toml
 [dependencies]
 chrono = "0.4.42"
-rust-dateparser = "=1.4.8"
+rust-dateparser = "=1.4.9"
 ```
 
 The tagged GitHub source release can be used instead:
 
 ```toml
-rust-dateparser = { git = "https://github.com/markusmobius/rust-dateparser", tag = "v1.4.8", version = "=1.4.8" }
+rust-dateparser = { git = "https://github.com/markusmobius/rust-dateparser", tag = "v1.4.9", version = "=1.4.9" }
 ```
 
-Registry builds resolve Rust-Dateutil `=2.9.1` from crates.io; Git builds use
+Registry builds resolve Rust-Dateutil `^2.9.1` from crates.io; Git builds use
 the pinned Rust-Dateutil revision.
 
 ```rust

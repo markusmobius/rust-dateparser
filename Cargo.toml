@@ -1,6 +1,6 @@
 [package]
 name = "rust-dateparser"
-version = "1.4.8"
+version = "1.4.9"
 edition = "2021"
 rust-version = "1.98.1"
 description = "Faithful Rust port of the go-dateparser parsing runtime"
@@ -12,7 +12,7 @@ aho-corasick = "1.1"
 chrono = { version = "0.4.42", default-features = false, features = ["clock", "std"] }
 chrono-tz = "0.10.4"
 regex = "1.12"
-rust-dateutil = { version = "=2.9.1", git = "https://github.com/markusmobius/rust-dateutil", rev = "3a7537dd3a4e223756fa31fb1941a10da4c78b30" }
+rust-dateutil = { version = "2.9.1", git = "https://github.com/markusmobius/rust-dateutil", rev = "3a7537dd3a4e223756fa31fb1941a10da4c78b30" }
 unicode-normalization = "0.1.25"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["raw_value"] }
